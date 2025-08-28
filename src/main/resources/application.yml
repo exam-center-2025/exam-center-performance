@@ -1,0 +1,126 @@
+server:
+    port: ${SERVER_PORT:8097}
+    servlet:
+        context-path: ${SERVER_SERVLET_CONTEXT_PATH:/performance}
+    error:
+        include-stacktrace: never
+
+spring:
+    application:
+        name: exam-center-performance
+    profiles:
+        active: ${SPRING_PROFILES_ACTIVE:local}
+    main:
+        allow-bean-definition-overriding: true
+    devtools:
+        restart:
+            enabled: true
+        livereload:
+            enabled: false
+    datasource:
+        url: jdbc:postgresql://${POSTGRES_HOST:192.168.100.105}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:exam_db}
+        username: ${POSTGRES_USERNAME:postgres}
+        password: ${POSTGRES_PASSWORD:postgres}
+        driver-class-name: org.postgresql.Driver
+        hikari:
+            minimum-idle: 5
+            maximum-pool-size: 15
+            idle-timeout: 600000
+            connection-timeout: 5000
+    jpa:
+        hibernate:
+            ddl-auto: none
+        show-sql: false
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.PostgreSQLDialect
+                format_sql: false
+        open-in-view: false
+
+# AIDEV-NOTE: 성능 테스트 서비스 전용 설정
+performance-test:
+    gatling:
+        # Gatling 실행 설정
+        results-directory: ${GATLING_RESULTS_DIR:./gatling-results}
+        simulations-directory: ${GATLING_SIMULATIONS_DIR:./gatling-simulations}
+        # 리포트 폴더 설정 (날짜별/테스트별 자동 생성)
+        reports:
+            base-path: ${GATLING_REPORTS_BASE:/home/ldm/exam-center-dev/performance-reports}
+            use-date-folder: true  # 날짜별 폴더 생성 (YYYYMMDD)
+            use-test-name: true    # 테스트명별 하위 폴더 생성
+        # 기본 타겟 서버 설정
+        target:
+            base-url: ${TARGET_BASE_URL:http://localhost:8091}
+            websocket-url: ${TARGET_WS_URL:ws://localhost:8099}
+        # 동시 실행 제한
+        max-concurrent-tests: ${MAX_CONCURRENT_TESTS:3}
+        # 테스트 타임아웃 (분)
+        test-timeout-minutes: ${TEST_TIMEOUT:30}
+    database:
+        # 성능 테스트용 데이터베이스 연결 설정
+        host: ${POSTGRES_HOST:192.168.100.105}
+        port: ${POSTGRES_PORT:5432}
+        database: ${POSTGRES_DATABASE:exam_db}
+        username: ${POSTGRES_USERNAME:postgres}
+        password: ${POSTGRES_PASSWORD:postgres}
+
+# Spring Boot Actuator 설정
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info,metrics,prometheus
+            base-path: /actuator
+        enabled-by-default: true
+    endpoint:
+        health:
+            show-details: always
+            show-components: always
+        info:
+            enabled: true
+        metrics:
+            enabled: true
+    health:
+        db:
+            enabled: true
+    info:
+        env:
+            enabled: true
+        java:
+            enabled: true
+        os:
+            enabled: true
+        build:
+            enabled: true
+    metrics:
+        export:
+            prometheus:
+                enabled: true
+                step: 30s
+        distribution:
+            percentiles-histogram:
+                http.server.requests: true
+            percentiles:
+                http.server.requests: 0.5, 0.9, 0.95, 0.99
+        tags:
+            application: ${spring.application.name}
+            service: exam-center-performance
+            environment: ${spring.profiles.active}
+    server:
+        port: ${MANAGEMENT_PORT:8097}
+
+springdoc:
+    api-docs:
+        enabled: true
+    swagger-ui:
+        path: /swagger-ui.html
+        enabled: true
+
+logging:
+    level:
+        kr.co.iosys.exam.performance: INFO
+        io.gatling: WARN
+        org.springframework: WARN
+        org.springframework.orm: WARN
+        org.hibernate: WARN
+        org.hibernate.SQL: WARN

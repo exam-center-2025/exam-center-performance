@@ -1,0 +1,111 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.2'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'io.gatling.gradle' version '3.10.5'
+}
+
+group = 'kr.co.iosys.exam'
+version = '1.0.0-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url = uri("https://repo.spring.io/milestone")
+    }
+}
+
+// 버전 변수 선언
+ext {
+    gatlingVersion = '3.10.5'
+}
+
+dependencies {
+    // Spring Boot Starters
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    
+    // Development Tools
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    
+    // JPA PostgreSQL
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'org.postgresql:postgresql'
+    
+    // Gatling for programmatic execution
+    implementation "io.gatling.highcharts:gatling-charts-highcharts:${gatlingVersion}"
+    implementation "io.gatling:gatling-http-java:${gatlingVersion}"
+    implementation "io.gatling:gatling-core-java:${gatlingVersion}"
+    
+    // Gatling runtime dependencies
+    gatling "io.gatling.highcharts:gatling-charts-highcharts:${gatlingVersion}"
+    gatling "io.gatling:gatling-http-java:${gatlingVersion}"
+    gatling "io.gatling:gatling-core-java:${gatlingVersion}"
+    gatling 'org.postgresql:postgresql'
+    gatling 'com.fasterxml.jackson.core:jackson-databind'
+    
+    // Jackson for JSON processing
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    
+    // Test Dependencies
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    
+    // Test Database - H2
+    testRuntimeOnly 'com.h2database:h2'
+    
+    // Springdoc OpenAPI for Spring MVC
+    implementation 'org.springdoc:springdoc-openapi-ui:1.7.0'
+    
+    // Test에서도 Lombok 사용
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+test {
+    useJUnitPlatform()
+    
+    testLogging {
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+        showExceptions true
+        showCauses true
+        showStackTraces false
+        exceptionFormat "full"
+        showStandardStreams true
+    }
+}
+
+bootJar {
+    destinationDirectory = file("../build")
+}
+
+// Gatling 설정
+gatling {
+    // Gatling 소스 경로 설정
+    simulations {
+        include '**/*Simulation.java'
+    }
+    
+    // JVM 옵션 설정
+    jvmArgs = [
+        '-Xmx1024m',
+        '-XX:+UseG1GC',
+        '-XX:MaxMetaspaceSize=256m'
+    ]
+    
+    // 시스템 속성 전달
+    systemProperties = System.properties.findAll { key, value ->
+        key.startsWith('plan_id') || key.startsWith('run_type') || key.startsWith('user_count') || key.startsWith('gatling.')
+    }
+}
