@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{dashboard/layout}">
+<head>
+  <!--
+  Vue 3 테스트 설정 페이지
+  반응형 폼, 실시간 유효성 검사, 테스트 설정 관리
+  
+  AIDEV-NOTE: Vue 3 Composition API 기반, TailwindCSS 스타일링
+  -->
+  <title>테스트 설정 (Vue) - Exam Center Dashboard</title>
+</head>
+<body>
+  <!-- 페이지별 스타일 -->
+  <th:block layout:fragment="styles">
+    <link rel="stylesheet" th:href="@{/vue-dist/assets/main-D0XlIco7.css}" />
+    <link rel="stylesheet" th:href="@{/vue-dist/assets/configure-BaRhJG62.css}" />
+  </th:block>
+
+  <!-- 메인 콘텐츠 -->
+  <div layout:fragment="content">
+    <!-- Vue 앱 마운트 포인트 -->
+    <div id="configure-app" 
+         th:data-exam-plans="${#jsonify.serialize(examPlans)}"
+         th:data-scenarios="${#jsonify.serialize(scenarios)}"
+         th:data-run-types="${#jsonify.serialize(runTypes)}"
+         th:data-selected-plan="${selectedPlan != null ? #jsonify.serialize(selectedPlan) : ''}"
+         th:data-default-request="${#jsonify.serialize(testRequest)}"
+         th:data-vue-config="${#jsonify.serialize(vueConfig)}"
+         th:data-user="${#jsonify.serialize(user)}"
+         th:data-page-title="${pageTitle}"
+         th:data-current-page="${currentPage}">
+      
+      <!-- 로딩 스피너 (Vue 앱 로드 전까지 표시) -->
+      <div class="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div class="text-center">
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+          <p class="text-gray-600">테스트 설정 화면을 로드하는 중...</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 오류 발생 시 대체 콘텐츠 -->
+    <div th:if="${errorMessage}" class="max-w-4xl mx-auto px-4 py-6">
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <i class="fas fa-exclamation-circle text-red-400"></i>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-red-800">오류가 발생했습니다</h3>
+            <div class="mt-2 text-sm text-red-700">
+              <p th:text="${errorMessage}">페이지 로드 중 오류가 발생했습니다.</p>
+            </div>
+            <div class="mt-4">
+              <div class="flex space-x-3">
+                <a href="/dashboard" class="bg-red-100 px-3 py-2 rounded-md text-sm font-medium text-red-800 hover:bg-red-200">
+                  대시보드로 돌아가기
+                </a>
+                <button onclick="location.reload()" class="bg-white px-3 py-2 rounded-md text-sm font-medium text-red-800 border border-red-300 hover:bg-gray-50">
+                  다시 시도
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 페이지별 스크립트 -->
+  <th:block layout:fragment="scripts">
+    <!-- Vue 앱 스크립트 -->
+    <script type="module" th:src="@{/vue-dist/configure.js}"></script>
+    
+    <!-- 초기화 스크립트 -->
+    <script th:inline="javascript">
+      // 전역 설정 및 초기 데이터 설정
+      window.APP_CONFIG = {
+        apiBaseUrl: /*[[@{/api/performance}]]*/ '/api/performance',
+        wsBaseUrl: /*[[@{/ws}]]*/ '/ws',
+        enableDebug: /*[[${@environment.acceptsProfiles('dev')}]]*/ false,
+        contextPath: /*[[@{/}]]*/ '/',
+        timestamp: new Date().toISOString()
+      };
+      
+      // Vue 앱 에러 핸들링
+      window.addEventListener('error', function(event) {
+        console.error('Vue 앱 로드 오류:', event.error);
+        
+        // Vue 앱 로드 실패 시 대체 UI 표시
+        const appElement = document.getElementById('configure-app');
+        if (appElement && !appElement.querySelector('.vue-app-loaded')) {
+          appElement.innerHTML = `
+            <div class="min-h-screen bg-gray-50 flex items-center justify-center">
+              <div class="text-center max-w-md">
+                <div class="bg-red-100 rounded-full p-3 mx-auto mb-4 w-16 h-16 flex items-center justify-center">
+                  <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">앱 로드 실패</h3>
+                <p class="text-gray-600 mb-4">Vue 앱을 로드하는데 실패했습니다. 네트워크 연결을 확인하고 다시 시도해주세요.</p>
+                <div class="space-x-3">
+                  <a href="/dashboard" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                    대시보드로
+                  </a>
+                  <button onclick="location.reload()" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    다시 시도
+                  </button>
+                  <a href="/dashboard/configure" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    기존 버전 사용
+                  </a>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      });
+      
+      // 페이지 로드 완료 시 초기화
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('Vue 테스트 설정 페이지 초기화 시작');
+        
+        // 브라우저 지원 확인
+        if (!window.fetch || !window.Promise) {
+          console.warn('브라우저 호환성 경고: 일부 기능이 지원되지 않을 수 있습니다');
+        }
+        
+        // 개발 환경에서만 디버그 정보 출력
+        if (window.APP_CONFIG?.enableDebug) {
+          console.log('앱 설정:', window.APP_CONFIG);
+          console.log('초기 데이터:', {
+            examPlans: /*[[${#jsonify.serialize(examPlans)}]]*/ [],
+            scenarios: /*[[${#jsonify.serialize(scenarios)}]]*/ [],
+            runTypes: /*[[${#jsonify.serialize(runTypes)}]]*/ []
+          });
+        }
+      });
+    </script>
+  </th:block>
+</body>
+</html>

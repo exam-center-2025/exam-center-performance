@@ -32,6 +32,24 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     
+    // Thymeleaf for dashboard
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect'
+    
+    // WebSocket for real-time updates
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    
+    // Redis for real-time data
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    
+    // WebJars for frontend dependencies (hybrid mode with Vue)
+    implementation 'org.webjars:webjars-locator-core'
+    implementation 'org.webjars:jquery:3.6.4'
+    implementation 'org.webjars.npm:chart.js:3.9.1'
+    implementation 'org.webjars:font-awesome:6.4.0'
+    implementation 'org.webjars:sockjs-client:1.5.1'
+    implementation 'org.webjars:stomp-websocket:2.3.4'
+    
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
@@ -109,3 +127,117 @@ gatling {
         key.startsWith('plan_id') || key.startsWith('run_type') || key.startsWith('user_count') || key.startsWith('gatling.')
     }
 }
+
+// Tailwind CSS 빌드 태스크
+task buildCSS(type: Exec) {
+    description = 'Build Tailwind CSS for production'
+    group = 'build'
+    
+    // Node.js 환경 확인
+    def nodeExists = { ->
+        try {
+            exec {
+                commandLine 'node', '--version'
+                standardOutput = new ByteArrayOutputStream()
+                errorOutput = new ByteArrayOutputStream()
+            }
+            return true
+        } catch (Exception) {
+            return false
+        }
+    }
+    
+    onlyIf { nodeExists() }
+    
+    commandLine 'npm', 'run', 'build-css-prod'
+    
+    inputs.file 'src/main/resources/static/css/tailwind-input.css'
+    inputs.file 'tailwind.config.js'
+    outputs.file 'src/main/resources/static/css/tailwind.css'
+}
+
+// Vue 3 Frontend 빌드 태스크
+task installVueNodeModules(type: Exec) {
+    description = 'Install Vue frontend dependencies'
+    group = 'build'
+    workingDir 'frontend-vue'
+    
+    // Node.js 환경 확인
+    def nodeExists = { ->
+        try {
+            exec {
+                commandLine 'node', '--version'
+                standardOutput = new ByteArrayOutputStream()
+                errorOutput = new ByteArrayOutputStream()
+            }
+            return true
+        } catch (Exception) {
+            return false
+        }
+    }
+    
+    onlyIf { nodeExists() && !file('frontend-vue/node_modules').exists() }
+    
+    commandLine 'npm', 'install'
+}
+
+task buildVue(type: Exec) {
+    description = 'Build Vue 3 frontend for production'
+    group = 'build'
+    workingDir 'frontend-vue'
+    
+    // Node.js 환경 확인 후 실행
+    def nodeExists = { ->
+        try {
+            exec {
+                commandLine 'node', '--version'
+                standardOutput = new ByteArrayOutputStream()
+                errorOutput = new ByteArrayOutputStream()
+            }
+            return true
+        } catch (Exception) {
+            return false
+        }
+    }
+    
+    onlyIf { nodeExists() && file('frontend-vue/package.json').exists() }
+    
+    dependsOn installVueNodeModules
+    
+    commandLine 'npm', 'run', 'build'
+    
+    inputs.dir 'frontend-vue/src'
+    inputs.files 'frontend-vue/package.json', 'frontend-vue/vite.config.js'
+    outputs.dir 'src/main/resources/static/vue-dist'
+}
+
+// Vue 개발 서버 실행 태스크
+task runVueDev(type: Exec) {
+    description = 'Start Vue development server'
+    group = 'development'
+    workingDir 'frontend-vue'
+    
+    dependsOn installVueNodeModules
+    
+    commandLine 'npm', 'run', 'dev'
+}
+
+// 개발용 CSS watch 태스크
+task watchCSS(type: Exec) {
+    description = 'Watch and build Tailwind CSS for development'
+    group = 'development'
+    
+    commandLine 'npm', 'run', 'build-css'
+}
+
+// processResources 태스크에 빌드 의존성 추가
+processResources.dependsOn buildCSS
+processResources.dependsOn buildVue
+
+// bootRun 태스크에 빌드 의존성 추가 (개발 환경)
+bootRun.dependsOn buildCSS
+// 개발 환경에서는 Vue 개발 서버를 별도로 실행
+// bootRun.dependsOn buildVue
+
+// 빌드 태스크에 Vue 빌드 의존성 추가
+build.dependsOn buildVue

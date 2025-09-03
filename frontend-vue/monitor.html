@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>실시간 모니터링 - {{testId}} - Exam Center Performance</title>
+  
+  <!-- AIDEV-NOTE: Vue 3 Monitor Application HTML template -->
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              300: '#93c5fd',
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    /* Custom styles for monitor page */
+    .card {
+      @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+    }
+    
+    .card-header {
+      @apply text-lg font-semibold text-gray-900 mb-4;
+    }
+    
+    .status-active {
+      @apply text-green-600 font-medium;
+    }
+    
+    .status-inactive {
+      @apply text-red-600 font-medium;
+    }
+    
+    .alert-custom {
+      @apply px-4 py-3 rounded-lg mb-4 border;
+    }
+    
+    .alert-success {
+      @apply bg-green-50 text-green-800 border-green-200;
+    }
+    
+    .alert-warning {
+      @apply bg-yellow-50 text-yellow-800 border-yellow-200;
+    }
+    
+    .alert-danger {
+      @apply bg-red-50 text-red-800 border-red-200;
+    }
+    
+    .alert-info {
+      @apply bg-blue-50 text-blue-800 border-blue-200;
+    }
+    
+    .btn {
+      @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-colors duration-200;
+    }
+    
+    .btn-primary {
+      @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+    }
+    
+    .btn-secondary {
+      @apply bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
+    }
+    
+    .btn-danger {
+      @apply bg-red-600 text-white hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+    }
+    
+    .btn-sm {
+      @apply text-sm px-3 py-1.5;
+    }
+    
+    .btn:disabled {
+      @apply opacity-50 cursor-not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div id="monitor-app">
+    <!-- Vue Monitor App will be mounted here -->
+    <div class="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div class="text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p class="text-gray-600">애플리케이션을 로딩하는 중...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pass testId to Vue app -->
+  <script>
+    // AIDEV-NOTE: Extract testId from URL query parameters
+    window.MONITOR_CONFIG = {
+      testId: (() => {
+        // First try URL query parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const testIdParam = urlParams.get('testId');
+        if (testIdParam) {
+          return testIdParam;
+        }
+        
+        // Fallback to path extraction
+        const pathParts = window.location.pathname.split('/');
+        const lastPart = pathParts[pathParts.length - 1];
+        if (lastPart && lastPart !== 'monitor' && !lastPart.includes('.html')) {
+          return lastPart;
+        }
+        
+        return 'unknown';
+      })(),
+      apiBasePath: '/performance/api/dashboard',
+      wsEndpoint: '/ws'
+    };
+    
+    console.log('Monitor config:', window.MONITOR_CONFIG);
+  </script>
+
+  <script type="module" src="/src/apps/monitor/main.js"></script>
+</body>
+</html>

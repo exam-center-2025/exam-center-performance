@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+  <!--
+  Vue 3 실시간 모니터링 페이지
+  
+  AIDEV-NOTE: Vue 3 기반 실시간 모니터링 페이지
+  -->
+  <title th:text="'실시간 모니터링 - ' + ${testId} + ' - Exam Center Dashboard'">Vue 실시간 모니터링</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              300: '#93c5fd',
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    /* Custom styles for monitor page */
+    .card {
+      @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+    }
+    
+    .card-header {
+      @apply text-lg font-semibold text-gray-900 mb-4;
+    }
+    
+    .status-active {
+      @apply text-green-600 font-medium;
+    }
+    
+    .status-inactive {
+      @apply text-red-600 font-medium;
+    }
+    
+    .alert-custom {
+      @apply px-4 py-3 rounded-lg mb-4 border;
+    }
+    
+    .alert-success {
+      @apply bg-green-50 text-green-800 border-green-200;
+    }
+    
+    .alert-warning {
+      @apply bg-yellow-50 text-yellow-800 border-yellow-200;
+    }
+    
+    .alert-danger {
+      @apply bg-red-50 text-red-800 border-red-200;
+    }
+    
+    .alert-info {
+      @apply bg-blue-50 text-blue-800 border-blue-200;
+    }
+    
+    .btn {
+      @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-colors duration-200;
+    }
+    
+    .btn-primary {
+      @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+    }
+    
+    .btn-secondary {
+      @apply bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
+    }
+    
+    .btn-danger {
+      @apply bg-red-600 text-white hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+    }
+    
+    .btn-sm {
+      @apply text-sm px-3 py-1.5;
+    }
+    
+    .btn:disabled {
+      @apply opacity-50 cursor-not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div id="monitor-app">
+    <!-- Vue Monitor App will be mounted here -->
+    <div class="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div class="text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p class="text-gray-600">Vue 모니터링 애플리케이션을 로딩하는 중...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Configuration Script -->
+  <script th:inline="javascript">
+    // AIDEV-NOTE: Pass server data to Vue app
+    window.MONITOR_CONFIG = {
+      testId: /*[[${testId}]]*/ 'TestId_123',
+      apiBasePath: /*[[${#httpServletRequest.contextPath}]]*/ '' + '/api/dashboard',
+      wsEndpoint: /*[[${#httpServletRequest.contextPath}]]*/ '' + '/ws',
+      serverTime: /*[[${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd HH:mm:ss')}]]*/ '2024-01-01 00:00:00'
+    };
+    
+    console.log('Monitor config from server:', window.MONITOR_CONFIG);
+  </script>
+
+  <!-- Vue Monitor CSS -->
+  <link rel="stylesheet" th:href="@{/vue-dist/assets/main-D0XlIco7.css}" />
+  <link rel="stylesheet" th:href="@{/vue-dist/assets/monitor-CA_df_KH.css}" />
+  
+  <!-- Vue Monitor Application -->
+  <script type="module" th:src="@{/vue-dist/monitor.js?v=1.0}"></script>
+
+  <!-- Fallback for development -->
+  <script>
+    // Fallback if Vue app fails to load
+    setTimeout(() => {
+      const app = document.getElementById('monitor-app');
+      if (app && app.innerHTML.includes('로딩하는 중')) {
+        app.innerHTML = `
+          <div class="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div class="text-center max-w-md mx-auto p-8">
+              <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+              <h1 class="text-xl font-semibold text-gray-900 mb-2">Vue 앱 로딩 실패</h1>
+              <p class="text-gray-600 mb-4">Vue 모니터링 애플리케이션을 로드할 수 없습니다.</p>
+              <a href="/performance/dashboard" class="btn btn-primary">
+                <i class="fas fa-arrow-left mr-2"></i>
+                대시보드로 돌아가기
+              </a>
+              <div class="mt-4 text-xs text-gray-500">
+                기존 모니터링 페이지: <a href="/performance/dashboard/monitor/${window.MONITOR_CONFIG?.testId || 'unknown'}" class="text-blue-600 hover:underline">여기 클릭</a>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }, 10000); // 10초 후 실행
+  </script>
+</body>
+</html>

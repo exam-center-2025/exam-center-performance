@@ -36,6 +36,30 @@ spring:
                 dialect: org.hibernate.dialect.PostgreSQLDialect
                 format_sql: false
         open-in-view: false
+    # Redis 설정 (실시간 데이터용)
+    data:
+        redis:
+            host: ${REDIS_HOST:192.168.100.105}
+            port: ${REDIS_PORT:6379}
+            username: ${REDIS_USERNAME:default}
+            password: ${REDIS_PASSWORD:redispassword}
+            database: ${REDIS_DATABASE:0}
+            timeout: 2000
+            lettuce:
+                pool:
+                    max-active: 10
+                    max-idle: 8
+                    min-idle: 2
+                    max-wait: -1ms
+    # Thymeleaf 설정
+    thymeleaf:
+        cache: false  # 개발 시 false, 프로덕션에서는 true
+        encoding: UTF-8
+        mode: HTML
+        prefix: classpath:/templates/
+        suffix: .html
+        servlet:
+            content-type: text/html
 
 # AIDEV-NOTE: 성능 테스트 서비스 전용 설정
 performance-test:
@@ -124,3 +148,8 @@ logging:
         org.springframework.orm: WARN
         org.hibernate: WARN
         org.hibernate.SQL: WARN
+        # WebSocket 로깅
+        org.springframework.web.socket: DEBUG
+        org.springframework.messaging: DEBUG
+        # Redis 로깅
+        org.springframework.data.redis: WARN

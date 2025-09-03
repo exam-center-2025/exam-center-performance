@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <!--
+  공통 헤더 Fragment
+  모든 대시보드 페이지에서 공통으로 사용되는 헤더 부분
+  
+  AIDEV-NOTE: Tailwind CSS로 완전 전환, 플랫 디자인 시스템 적용
+  -->
+  <th:block th:fragment="head">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Exam Center Performance Dashboard - 시험 성능 테스트 모니터링">
+    <meta name="keywords" content="performance, testing, dashboard, monitoring">
+    <meta name="author" content="Exam Center Team">
+    
+    <!-- 페이지별 제목 -->
+    <title th:text="${pageTitle != null ? pageTitle + ' - Exam Center Dashboard' : 'Exam Center Performance Dashboard'}">Exam Center Dashboard</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <!-- 폰트 (Google Fonts) - 최우선 로드 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" th:href="@{/webjars/font-awesome/css/all.min.css}">
+    
+    <!-- Tailwind CSS - 플랫 디자인 시스템 -->
+    <link rel="stylesheet" th:href="@{/css/tailwind.css?v=7.0}">
+    
+    <!-- AIDEV-NOTE: Tailwind CSS로 완전 전환, 기존 커스텀 CSS 파일들 대체 -->
+    
+    <!-- WebSocket 상태 표시용 추가 CSS - Tailwind로 대체 예정 -->
+  </th:block>
+</head>
+<body>
+  <!--
+  네비게이션 헤더 (상단 바)
+  -->
+  <header th:fragment="navbar" class="dashboard-header">
+    <div class="flex items-center w-full">
+      <!-- 사이드바 토글 버튼 -->
+      <button class="btn btn-secondary mr-5" id="sidebar-toggle">
+        <i class="fas fa-bars"></i>
+      </button>
+      
+      <!-- 로고 및 제목 -->
+      <h1 class="text-xl font-semibold text-gray-900 flex items-center gap-3 mr-10">
+        <i class="fas fa-tachometer-alt text-primary-600"></i>
+        Exam Center Dashboard
+      </h1>
+      
+      <!-- 연결 상태 표시 -->
+      <div class="ml-auto flex items-center gap-3">
+        <span class="text-gray-500 text-sm">연결상태:</span>
+        <span id="connection-status" class="text-sm font-medium text-green-600">확인중...</span>
+        
+        <!-- 현재 시간 -->
+        <span class="text-gray-400 text-sm">|</span>
+        <span id="current-time" class="text-gray-500 text-sm"></span>
+      </div>
+    </div>
+    
+    <!-- WebSocket 연결 상태 알림 -->
+    <div id="websocket-status" class="alert" role="alert"></div>
+  </header>
+  
+  <!--
+  사이드바 네비게이션
+  -->
+  <aside th:fragment="sidebar" class="dashboard-sidebar" id="sidebar">
+    <div class="h-full">
+      <!-- 사이드바 헤더 -->
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <i class="fas fa-chart-line text-primary-600"></i>
+          <span>Performance</span>
+        </div>
+      </div>
+      
+      <!-- 메인 네비게이션 -->
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">메인 메뉴</div>
+          
+          <a th:href="@{/dashboard}" 
+             th:classappend="${currentPage == 'dashboard'} ? 'active' : ''" 
+             class="sidebar-link">
+            <i class="fas fa-home"></i>
+            <span>대시보드</span>
+          </a>
+          
+          <a th:href="@{/dashboard/configure}" 
+             th:classappend="${currentPage == 'configure'} ? 'active' : ''" 
+             class="sidebar-link">
+            <i class="fas fa-cog"></i>
+            <span>테스트 설정</span>
+          </a>
+        </div>
+        
+        <div class="nav-section">
+          <div class="nav-section-title">모니터링</div>
+          
+          <button onclick="showActiveTestsModal()" class="sidebar-link">
+            <i class="fas fa-play"></i>
+            <span>실행 중인 테스트</span>
+          </button>
+          
+          <a th:href="@{/dashboard/monitor}" 
+             th:classappend="${currentPage == 'monitor'} ? 'active' : ''" 
+             class="sidebar-link">
+            <i class="fas fa-chart-line"></i>
+            <span>실시간 모니터링</span>
+          </a>
+          
+          <a th:href="@{/dashboard/results}" 
+             th:classappend="${currentPage == 'results'} ? 'active' : ''" 
+             class="sidebar-link">
+            <i class="fas fa-history"></i>
+            <span>테스트 결과</span>
+          </a>
+        </div>
+        
+        <div class="nav-section">
+          <div class="nav-section-title">액션</div>
+          
+          <button class="sidebar-link btn-action" onclick="refreshDashboard()">
+            <i class="fas fa-sync-alt"></i>
+            <span>새로고침</span>
+          </button>
+          
+          <button class="sidebar-link btn-action btn-primary" onclick="openNewTestModal()">
+            <i class="fas fa-plus"></i>
+            <span>새 테스트</span>
+          </button>
+        </div>
+      </nav>
+    </div>
+  </aside>
+  
+  <!--
+  로딩 인디케이터
+  -->
+  <div th:fragment="loading" id="loading-indicator" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 hidden">
+    <div class="text-center">
+      <div class="loading-spinner animate-spin w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full mx-auto mb-2"></div>
+      <div class="loading-text text-gray-600">데이터를 불러오는 중...</div>
+    </div>
+  </div>
+  
+  <!--
+  알림 컨테이너
+  -->
+  <div th:fragment="alerts" id="alert-container" class="fixed z-50 w-96 top-20 right-5">
+    <!-- 동적으로 추가되는 알림들 -->
+  </div>
+  
+  <!--
+  기본 스크립트 (모든 페이지에서 로드)
+  -->
+  <th:block th:fragment="scripts">
+    <!-- jQuery -->
+    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+    
+    <!-- SockJS & STOMP -->
+    <script th:src="@{/webjars/sockjs-client/sockjs.min.js}"></script>
+    <script th:src="@{/webjars/stomp-websocket/stomp.min.js}"></script>
+    
+    <!-- Chart.js -->
+    <script th:src="@{/webjars/chart.js/3.9.1/dist/chart.min.js}"></script>
+    <!-- Chart.js Date Adapter (required for time scale) -->
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.1/dist/chartjs-adapter-moment.min.js"></script>
+    
+    <!-- 커스텀 JavaScript -->
+    <script th:src="@{/js/websocket.js?v=1.2}"></script>
+    <script th:src="@{/js/charts.js?v=1.3}"></script>
+    
+    <!-- 공통 기능 -->
+    <script>
+      // API URL에 context path 추가하는 공통 함수
+      function getApiUrl(path) {
+        const contextPath = window.location.pathname.split('/')[1] || '';
+        return contextPath ? `/${contextPath}${path}` : path;
+      }
+      
+      // 현재 시간 업데이트
+      function updateCurrentTime() {
+        const timeElement = document.getElementById('current-time');
+        if (timeElement) {
+          timeElement.textContent = new Date().toLocaleTimeString('ko-KR');
+        }
+      }
+      
+      // 1초마다 시간 업데이트
+      setInterval(updateCurrentTime, 1000);
+      updateCurrentTime(); // 즉시 실행
+      
+      // 활성 테스트 모달 표시
+      function showActiveTestsModal() {
+        // 활성 테스트 목록 조회
+        $.ajax({
+          url: getApiUrl('/api/dashboard/active-tests'),
+          method: 'GET',
+          success: function(tests) {
+            let modalHtml = `
+              <div class="modal fade" id="activeTestsModal" tabindex="-1" aria-labelledby="activeTestsModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="activeTestsModalLabel">
+                        <i class="fas fa-play-circle"></i> 실행 중인 테스트
+                      </h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">`;
+            
+            if (tests && tests.length > 0) {
+              modalHtml += '<div class="space-y-2">';
+              tests.forEach(function(test) {
+                modalHtml += `
+                  <div class="border border-gray-200 p-3">
+                    <div class="flex justify-between items-start">
+                      <h6 class="font-medium">${test.testName || test.testId}</h6>
+                      <span class="badge badge-primary">${test.status}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-1">
+                      Plan ID: ${test.planId} | 사용자: ${test.maxConcurrentUsers || 0}
+                    </p>
+                    <small class="text-gray-500">시작: ${test.startTime || 'N/A'}</small>
+                  </div>`;
+              });
+              modalHtml += '</div>';
+            } else {
+              modalHtml += '<p class="text-center text-gray-500">현재 실행 중인 테스트가 없습니다.</p>';
+            }
+            
+            modalHtml += `
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    </div>
+                  </div>
+                </div>
+              </div>`;
+            
+            // 기존 모달 제거 후 새로 추가
+            $('#activeTestsModal').remove();
+            $('body').append(modalHtml);
+            
+            // 모달 표시 (jQuery로 대체)
+            $('#activeTestsModal').addClass('show block');
+            $('body').append('<div class="modal-backdrop fade show"></div>');
+          },
+          error: function() {
+            alert('활성 테스트 목록을 조회할 수 없습니다.');
+          }
+        });
+      }
+      
+      // 새로고침 함수
+      function refreshDashboard() {
+        location.reload();
+      }
+      
+      // 새 테스트 모달 열기
+      function openNewTestModal() {
+        // 테스트 설정 페이지로 이동
+        window.location.href = '/performance/dashboard/configure';
+      }
+      
+      // 페이지 로드 시 초기화
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('대시보드 레이아웃 로드 완료 - Tailwind CSS');
+        
+        // 사이드바 토글 기능
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebar = document.getElementById('sidebar');
+        const body = document.body;
+        
+        if (sidebarToggle && sidebar) {
+          sidebarToggle.addEventListener('click', function() {
+            if (body.classList.contains('sidebar-open')) {
+              body.classList.remove('sidebar-open');
+              body.classList.add('sidebar-collapsed');
+              sidebar.classList.add('collapsed');
+            } else {
+              body.classList.add('sidebar-open');
+              body.classList.remove('sidebar-collapsed');
+              sidebar.classList.remove('collapsed');
+            }
+          });
+        }
+        
+        // 페이지별 초기화 함수 호출 (있는 경우)
+        if (typeof initializePage === 'function') {
+          initializePage();
+        }
+        
+        // 툴팁 초기화 제거 (Tailwind에서는 필요없음)
+        
+        // WebSocket 초기화는 각 페이지에서 필요에 따라 수행
+        console.log('페이지 로드 완료');
+      });
+      
+      // CSRF 토큰 설정 (Spring Security 사용 시)
+      const token = document.querySelector('meta[name="_csrf"]');
+      const header = document.querySelector('meta[name="_csrf_header"]');
+      
+      if (token && header) {
+        // jQuery AJAX 기본 설정
+        $.ajaxSetup({
+          beforeSend: function(xhr) {
+            xhr.setRequestHeader(header.getAttribute('content'), token.getAttribute('content'));
+          }
+        });
+      }
+    </script>
+  </th:block>
+</body>
+</html>

@@ -4,6 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * AIDEV-NOTE: 시험 센터 성능 테스트 서비스 메인 애플리케이션
@@ -11,6 +12,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
  */
 @SpringBootApplication
 @EnableAsync
+@EnableScheduling
 @ConfigurationPropertiesScan("kr.co.iosys.exam.performance.config")
 public class PerformanceTestApplication {
 

@@ -1,0 +1,392 @@
+/*
+공통 스타일 - Results 앱 및 전체 프로젝트에서 사용
+플랫 디자인 시스템, 폰트, 기본 컴포넌트 스타일
+
+AIDEV-NOTE: 기존 results.html의 스타일을 CSS로 통합
+Tailwind CSS와 함께 사용, 일관된 디자인 언어
+*/
+
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* 폰트 설정 */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
+
+/* CSS 변수 - 디자인 토큰 */
+:root {
+  /* 색상 팔레트 */
+  --color-primary: #6366f1;
+  --color-primary-dark: #4338ca;
+  --color-secondary: #64748b;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+  
+  /* 그레이 스케일 */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  
+  /* 타이포그래피 */
+  --font-family-sans: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-family-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  
+  /* 간격 */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  
+  /* 플랫 디자인 - 그림자 제거/최소화 */
+  --shadow-sm: none;
+  --shadow-md: 0 0 0 1px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 0 0 1px rgba(0, 0, 0, 0.1);
+  
+  /* 테두리 */
+  --border-width: 1px;
+  --border-color: #d1d5db;
+  --border-radius: 0; /* 각진 디자인 */
+  
+  /* 전환 */
+  --transition-fast: 0.15s ease-in-out;
+  --transition-normal: 0.2s ease-in-out;
+  --transition-slow: 0.3s ease-in-out;
+}
+
+/* 기본 설정 */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family-sans);
+  color: var(--color-gray-900);
+  background-color: var(--color-gray-50);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 제목 스타일 */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 0.5em;
+}
+
+/* 링크 스타일 */
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-primary-dark);
+}
+
+/* 플랫 디자인 컴포넌트 */
+
+/* 플랫 카드 */
+.flat-card {
+  background: white;
+  border: 1px solid var(--color-gray-300);
+  border-radius: 0; /* 플랫 디자인 - 둥글기 없음 */
+  box-shadow: none;
+  transition: border-color var(--transition-normal);
+}
+
+.flat-card:hover {
+  border-color: var(--color-primary);
+}
+
+/* 메트릭 카드 */
+.metric-card {
+  background: white;
+  border: 1px solid var(--color-gray-300);
+  padding: 1.5rem;
+  text-align: center;
+  position: relative;
+  border-radius: 0;
+  transition: all var(--transition-normal);
+}
+
+.metric-card:hover {
+  border-color: var(--color-gray-400);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.metric-card.primary {
+  border: 1px solid var(--color-primary);
+  border-left-width: 3px;
+}
+
+/* 차트 컨테이너 */
+.chart-container {
+  background: white;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 0;
+  transition: all var(--transition-normal);
+}
+
+.chart-container:hover {
+  border-color: var(--color-gray-300);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 테이블 스타일 */
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.detail-table th {
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-gray-300);
+  color: var(--color-gray-800);
+  font-weight: 700;
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+.detail-table td {
+  background: white;
+  border: 1px solid var(--color-gray-300);
+  color: var(--color-gray-900);
+  font-weight: 500;
+  padding: 0.75rem 1rem;
+}
+
+.detail-table tbody tr:hover th,
+.detail-table tbody tr:hover td {
+  background-color: var(--color-blue-50, #eff6ff);
+  border-color: var(--color-blue-200, #bfdbfe);
+}
+
+/* 상태 배지 */
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid;
+  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.status-badge.status-completed {
+  background: var(--color-success);
+  border-color: #059669;
+  color: white;
+}
+
+.status-badge.status-running {
+  background: var(--color-info);
+  border-color: #2563eb;
+  color: white;
+}
+
+.status-badge.status-failed {
+  background: var(--color-error);
+  border-color: #dc2626;
+  color: white;
+}
+
+.status-badge.status-pending {
+  background: var(--color-warning);
+  border-color: #d97706;
+  color: white;
+}
+
+.status-badge.status-cancelled {
+  background: var(--color-gray-500);
+  border-color: var(--color-gray-600);
+  color: white;
+}
+
+.status-badge.status-unknown {
+  background: var(--color-gray-400);
+  border-color: var(--color-gray-500);
+  color: white;
+}
+
+/* 버튼 스타일 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  border: 2px solid;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  text-decoration: none;
+}
+
+.btn:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  color: white;
+}
+
+.btn-secondary {
+  background: var(--color-gray-100);
+  border-color: var(--color-gray-300);
+  color: var(--color-gray-700);
+}
+
+.btn-secondary:hover {
+  background: var(--color-gray-200);
+  border-color: var(--color-gray-400);
+  color: var(--color-gray-800);
+}
+
+.btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 유틸리티 클래스 */
+.font-mono {
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 반응형 조정 */
+@media (max-width: 768px) {
+  .metric-card {
+    padding: 1rem;
+  }
+  
+  .detail-table th,
+  .detail-table td {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+  }
+  
+  .btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* 접근성 개선 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 다크 모드 준비 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-gray-50: #1f2937;
+    --color-gray-100: #374151;
+    --color-gray-200: #4b5563;
+    --color-gray-300: #6b7280;
+    --color-gray-800: #f3f4f6;
+    --color-gray-900: #f9fafb;
+  }
+  
+  body {
+    background-color: var(--color-gray-900);
+    color: var(--color-gray-100);
+  }
+  
+  .flat-card,
+  .metric-card,
+  .chart-container {
+    background: var(--color-gray-800);
+    border-color: var(--color-gray-600);
+  }
+  
+  .detail-table th {
+    background: var(--color-gray-700);
+    color: var(--color-gray-200);
+  }
+  
+  .detail-table td {
+    background: var(--color-gray-800);
+    color: var(--color-gray-100);
+  }
+}
+
+/* 프린트 스타일 */
+@media print {
+  .btn,
+  .animate-pulse,
+  .animate-spin {
+    display: none !important;
+  }
+  
+  .flat-card,
+  .metric-card,
+  .chart-container {
+    border: 1px solid var(--color-gray-400) !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+}

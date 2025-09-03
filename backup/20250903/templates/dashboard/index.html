@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{dashboard/layout}">
+<head>
+  <!--
+  메인 대시보드 페이지
+  시험 계획 목록, 실행 중인 테스트, 최근 결과 표시
+  
+  AIDEV-NOTE: Tailwind CSS로 완전 전환, 플랫 디자인 시스템 적용
+  -->
+  <title>Dashboard - Exam Center</title>
+</head>
+<body>
+  <!-- 페이지별 스타일 - 최소화 -->
+  <th:block layout:fragment="styles">
+    <!-- Tailwind CSS에서 모든 스타일을 처리하므로 커스텀 스타일 최소화 -->
+  </th:block>
+
+  <!-- 메인 콘텐츠 -->
+  <div layout:fragment="content" class="p-3 space-y-3">
+    <!-- 페이지 헤더 -->
+    <div>
+      <h1 class="text-lg font-bold text-gray-900 mb-2">성능 테스트 대시보드</h1>
+    </div>
+    
+    <!-- 요약 카드 -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-value" id="total-plans-count">
+          <span th:text="${examPlans != null ? examPlans.size() : 0}">0</span>
+        </div>
+        <div class="metric-label">시험 계획</div>
+      </div>
+      
+      <div class="metric-card">
+        <div class="metric-value" id="active-tests-count">
+          <span th:text="${activeTests != null ? activeTests.size() : 0}">0</span>
+        </div>
+        <div class="metric-label">실행 중인 테스트</div>
+      </div>
+      
+      <div class="metric-card">
+        <div class="metric-value" id="completed-today-count">
+          <span th:text="${recentResults != null ? recentResults.size() : 0}">0</span>
+        </div>
+        <div class="metric-label">최근 완료</div>
+      </div>
+      
+      <div class="metric-card">
+        <div class="metric-value" id="success-rate">
+          <span th:text="${averageSuccessRate > 0 ? #numbers.formatDecimal(averageSuccessRate, 1, 1) + '%' : 'N/A'}">0%</span>
+        </div>
+        <div class="metric-label">평균 성공률</div>
+      </div>
+    </div>
+
+    <!-- 시험 계획 목록 -->
+    <div class="card">
+      <div class="card-header">
+        <div class="flex justify-between items-center">
+          <h2 class="card-title">
+            <i class="fas fa-calendar-alt text-primary-600"></i>
+            시험 계획 목록
+          </h2>
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-gray-500 bg-gray-50 px-3 py-1 border border-gray-200">
+              총 <span class="font-semibold text-primary-600" th:text="${examPlans?.size() ?: 0}">0</span>개
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card-body p-0" id="exam-plans-table">
+        <div th:if="${examPlans != null and !examPlans.empty}">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>계획명</th>
+                <th>상태</th>
+                <th>시작일</th>
+                <th>액션</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="plan : ${examPlans}">
+                <td th:text="${plan.planId}">1</td>
+                <td th:text="${plan.name}">시험 계획명</td>
+                <td>
+                  <span class="badge status-running" 
+                        th:classappend="'status-' + ${plan.status?.toLowerCase()}"
+                        th:text="${plan.status}">ACTIVE</span>
+                </td>
+                <td th:text="${#temporals.format(plan.startTime, 'yyyy-MM-dd')}">2025-01-01</td>
+                <td>
+                  <a th:href="@{/dashboard/configure(planId=${plan.planId})}" 
+                     class="btn btn-primary btn-sm">
+                    <i class="fas fa-play"></i> 테스트
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div th:if="${examPlans == null or examPlans.empty}" class="p-6 text-center bg-gray-50">
+          <div class="text-2xl mb-2 text-gray-400">📋</div>
+          <div class="text-sm font-medium text-gray-700">시험 계획이 없습니다</div>
+          <div class="text-xs text-gray-500 mt-1">새로운 시험 계획을 등록해주세요</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 실행 중인 테스트 -->
+    <div class="card">
+      <div class="card-header">
+        <div class="flex justify-between items-center">
+          <h2 class="card-title">
+            <i class="fas fa-play-circle text-primary-600"></i>
+            실행 중인 테스트
+          </h2>
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-gray-500 bg-gray-50 px-3 py-1 border border-gray-200">
+              총 <span class="font-semibold text-primary-600" th:text="${activeTests?.size() ?: 0}">0</span>개
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card-body p-0" id="active-tests-table">
+        <div th:if="${activeTests != null and !activeTests.empty}">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>테스트 ID</th>
+                <th>상태</th>
+                <th>진행률</th>
+                <th>경과시간</th>
+                <th>액션</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="test : ${activeTests}">
+                <td class="font-mono" th:text="${test.testId}">TestId_123</td>
+                <td>
+                  <span class="badge status-running" 
+                        th:classappend="'status-' + ${test.status?.toLowerCase()}"
+                        th:text="${test.status}">RUNNING</span>
+                </td>
+                <td>
+                  <div class="w-full">
+                    <div class="progress mb-1">
+                      <div class="progress-bar w-2/3"></div>
+                    </div>
+                    <div class="text-xs text-gray-600">65%</div>
+                  </div>
+                </td>
+                <td class="font-mono">5:23</td>
+                <td>
+                  <div class="flex gap-1">
+                    <a th:href="@{/dashboard/monitor/{testId}(testId=${test.testId})}" 
+                       class="btn btn-primary btn-sm">
+                      <i class="fas fa-chart-line"></i> 모니터링
+                    </a>
+                    <button th:data-testid="${test.testId}" 
+                            onclick="stopTest(this.getAttribute('data-testid'))"
+                            class="btn btn-danger btn-sm">
+                      <i class="fas fa-stop"></i> 중단
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div th:if="${activeTests == null or activeTests.empty}" class="p-6 text-center bg-gray-50">
+          <div class="text-2xl mb-2 text-gray-400">⏸️</div>
+          <div class="text-sm font-medium text-gray-700">실행 중인 테스트가 없습니다</div>
+          <div class="text-xs text-gray-500 mt-1">새로운 테스트를 시작해보세요</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 최근 테스트 결과 -->
+    <div class="card">
+      <div class="card-header">
+        <div class="flex justify-between items-center">
+          <h2 class="card-title">
+            <i class="fas fa-chart-bar text-primary-600"></i>
+            최근 테스트 결과
+          </h2>
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-gray-500 bg-gray-50 px-3 py-1 border border-gray-200">
+              마지막 업데이트: <span class="font-semibold text-primary-600" id="last-refresh-time">--:--:--</span>
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card-body p-0" id="recent-results-table">
+        <div th:if="${recentResults != null and !recentResults.empty}">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>테스트 ID</th>
+                <th>상태</th>
+                <th>성공률</th>
+                <th>평균 응답시간</th>
+                <th>완료시간</th>
+                <th>액션</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="result : ${#lists.size(recentResults) > 10 ? recentResults.subList(0, 10) : recentResults}">
+                <td class="font-mono" th:text="${result.testId}">TestId_123</td>
+                <td>
+                  <span class="badge status-completed" 
+                        th:classappend="'status-' + ${result.status?.toLowerCase()}"
+                        th:text="${result.status}">COMPLETED</span>
+                </td>
+                <td class="font-mono" th:text="${result.successRate != null ? #numbers.formatDecimal(result.successRate, 1, 2) + '%' : 'N/A'}">98.5%</td>
+                <td class="font-mono" th:text="${result.avgResponseTime != null ? #numbers.formatDecimal(result.avgResponseTime, 1, 0) + 'ms' : 'N/A'}">245ms</td>
+                <td class="font-mono" th:text="${result.endTime != null ? #temporals.format(result.endTime, 'MM-dd HH:mm') : 'N/A'}">01-31 14:30</td>
+                <td>
+                  <a th:href="@{/performance/dashboard/results/{testId}(testId=${result.testId})}" 
+                     class="btn btn-secondary btn-sm">
+                    <i class="fas fa-chart-bar"></i> 결과보기
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div th:if="${recentResults == null or recentResults.empty}" class="p-6 text-center bg-gray-50">
+          <div class="text-2xl mb-2 text-gray-400">📊</div>
+          <div class="text-sm font-medium text-gray-700">테스트 결과가 없습니다</div>
+          <div class="text-xs text-gray-500 mt-1">테스트를 실행하면 결과가 표시됩니다</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 페이지별 스크립트 -->
+  <th:block layout:fragment="scripts">
+    <script th:src="@{/js/dashboard.js}"></script>
+    
+    <script>
+      // 페이지 초기화 함수
+      function initializePage() {
+        console.log('메인 대시보드 페이지 초기화 - Tailwind CSS 적용');
+        
+        // 대시보드 매니저 초기화
+        initializeDashboard().then(manager => {
+          console.log('대시보드 초기화 완료');
+          window.dashboardManager = manager;
+        }).catch(error => {
+          console.error('대시보드 초기화 실패:', error);
+        });
+      }
+      
+      // 대시보드 새로고침
+      async function refreshDashboard() {
+        if (window.dashboardManager) {
+          await window.dashboardManager.refreshData();
+        }
+      }
+      
+      // 테스트 중단 (전역 함수)
+      async function stopTest(testId) {
+        if (window.dashboardManager) {
+          await window.dashboardManager.stopTest(testId);
+        }
+      }
+      
+      // 자동 새로고침 설정
+      document.addEventListener('DOMContentLoaded', function() {
+        // 자동 새로고침 토글 (있는 경우)
+        const autoRefreshToggle = document.getElementById('auto-refresh-toggle');
+        if (autoRefreshToggle) {
+          autoRefreshToggle.checked = true; // 기본값: 자동 새로고침 활성화
+        }
+      });
+    </script>
+  </th:block>
+</body>
+</html>

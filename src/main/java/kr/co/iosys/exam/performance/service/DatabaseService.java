@@ -39,7 +39,7 @@ public class DatabaseService {
      */
     public List<ExamPlan> getExamPlans() {
         try {
-            return examPlanRepository.findByStatusOrderByCreatedAtDesc("ACTIVE");
+            return examPlanRepository.findByStatusAndEnableYn("ACTIVE", 'Y');
         } catch (Exception e) {
             log.error("시험 계획 목록 조회 실패", e);
             throw new PerformanceTestException(

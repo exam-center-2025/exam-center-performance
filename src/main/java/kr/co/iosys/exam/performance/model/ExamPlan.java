@@ -49,5 +49,6 @@ public class ExamPlan {
     private LocalDateTime updatedAt;
     
     @Column(name = "enable_yn")
-    private Character enableYn;
+    @Builder.Default
+    private Character enableYn = 'Y';
 }

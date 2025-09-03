@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{dashboard/layout}">
+<head>
+  <!--
+  Vue 3 기반 테스트 결과 상세 페이지
+  기존 results.html의 Vue 전환 버전
+  
+  AIDEV-NOTE: Vue 앱 통합, testId 전달, 플랫 디자인 유지
+  -->
+  <title th:text="'테스트 결과 (Vue) - ' + ${testResult?.testId} + ' - Exam Center Dashboard'">테스트 결과 (Vue)</title>
+  
+  <!-- Vue 앱을 위한 메타 데이터 -->
+  <meta name="test-id" th:content="${testResult?.testId}">
+  <meta name="test-status" th:content="${testResult?.status}">
+</head>
+<body>
+  <!-- 페이지별 스타일 -->
+  <th:block layout:fragment="styles">
+    <!-- Vue 빌드된 CSS -->
+    <link rel="stylesheet" th:href="@{/vue-dist/assets/main-D0XlIco7.css}" />
+    <link rel="stylesheet" th:href="@{/vue-dist/assets/results-DVmVN_km.css}" />
+    
+    <style>
+      /* 레이아웃 기본 설정 */
+      .vue-app-container {
+        min-height: calc(100vh - 200px);
+        padding: 0;
+      }
+      
+      /* 로딩 상태 스타일 */
+      .app-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+        gap: 1rem;
+      }
+      
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #e5e7eb;
+        border-top: 4px solid #6366f1;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      /* 에러 상태 스타일 */
+      .app-error {
+        padding: 2rem;
+        margin: 2rem;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-left: 4px solid #ef4444;
+      }
+      
+      /* Vue 앱이 마운트되기 전 숨김 */
+      #vue-results-app[v-cloak] {
+        display: none;
+      }
+    </style>
+  </th:block>
+
+  <!-- 메인 콘텐츠 -->
+  <div layout:fragment="content" class="vue-app-container">
+    <!-- Vue 앱 마운트 지점 -->
+    <div id="vue-results-app" v-cloak>
+      <!-- 초기 로딩 상태 (Vue가 마운트되기 전) -->
+      <div class="app-loading">
+        <div class="loading-spinner"></div>
+        <p class="text-gray-600 font-medium">결과 페이지를 불러오는 중...</p>
+      </div>
+    </div>
+    
+    <!-- Vue 로드 실패 시 폴백 -->
+    <div id="vue-fallback" style="display: none;">
+      <div class="app-error">
+        <h2 class="text-xl font-bold text-red-800 mb-4">
+          <i class="fas fa-exclamation-triangle mr-2"></i>
+          Vue 앱 로드 실패
+        </h2>
+        <p class="text-red-700 mb-4">
+          Vue 기반 결과 페이지를 불러오는데 실패했습니다.
+        </p>
+        <div class="flex gap-4">
+          <a href="/performance/dashboard" class="btn btn-primary">
+            <i class="fas fa-arrow-left mr-2"></i>
+            대시보드로 돌아가기
+          </a>
+          <a th:href="@{/dashboard/results/{testId}(testId=${testResult?.testId})}" class="btn btn-secondary">
+            <i class="fas fa-file-alt mr-2"></i>
+            기존 버전으로 보기
+          </a>
+          <button onclick="location.reload()" class="btn btn-secondary">
+            <i class="fas fa-redo mr-2"></i>
+            페이지 새로고침
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 개발 환경 디버그 정보 -->
+    <div th:if="${#strings.equals(#authentication.name, 'admin')}" class="mt-8 p-4 bg-gray-100 border-l-4 border-blue-500 text-sm">
+      <h4 class="font-bold text-gray-800 mb-2">
+        <i class="fas fa-bug mr-1"></i>
+        디버그 정보 (관리자만 표시)
+      </h4>
+      <div class="grid grid-cols-2 gap-4 text-gray-700">
+        <div>
+          <strong>테스트 ID:</strong> <span th:text="${testResult?.testId}">N/A</span>
+        </div>
+        <div>
+          <strong>상태:</strong> <span th:text="${testResult?.status}">N/A</span>
+        </div>
+        <div>
+          <strong>메트릭 수:</strong> <span th:text="${metricsHistory != null ? #lists.size(metricsHistory) : 'N/A'}">N/A</span>
+        </div>
+        <div>
+          <strong>리포트 URL:</strong> 
+          <span th:text="${reportUrl != null ? 'Available' : 'Not Available'}">N/A</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 페이지별 스크립트 -->
+  <th:block layout:fragment="scripts">
+    <script th:inline="javascript">
+      // 서버에서 전달된 데이터를 전역 변수로 설정
+      window.TEST_ID = /*[[${testResult?.testId}]]*/ null;
+      window.TEST_STATUS = /*[[${testResult?.status}]]*/ null;
+      window.INITIAL_DATA = {
+        testResult: /*[[${testResult}]]*/ null,
+        metricsHistory: /*[[${metricsHistory}]]*/ [],
+        reportUrl: /*[[${reportUrl}]]*/ null
+      };
+      
+      // 환경 설정
+      window.APP_ENV = {
+        isDevelopment: /*[[${@environment.acceptsProfiles('dev')}]]*/ false,
+        apiBaseUrl: /*[[${@environment.getProperty('app.api.base-url', '/api')}]]*/ '/api',
+        wsBaseUrl: /*[[${@environment.getProperty('app.ws.base-url', '/ws')}]]*/ '/ws'
+      };
+      
+      // Vue 앱 로드 에러 핸들링
+      window.addEventListener('error', function(event) {
+        // Vue 관련 에러인지 확인
+        if (event.filename && event.filename.includes('results.js')) {
+          console.error('Vue 앱 로드 오류:', event.error);
+          showVueFallback('Vue 스크립트 로드 실패');
+        }
+      });
+      
+      // 폴백 표시 함수
+      function showVueFallback(reason) {
+        const app = document.getElementById('vue-results-app');
+        const fallback = document.getElementById('vue-fallback');
+        
+        if (app) app.style.display = 'none';
+        if (fallback) {
+          fallback.style.display = 'block';
+          const errorMsg = fallback.querySelector('p');
+          if (errorMsg) {
+            errorMsg.textContent = reason || '알 수 없는 오류가 발생했습니다.';
+          }
+        }
+      }
+      
+      // Vue 앱 마운트 타임아웃 (10초)
+      setTimeout(function() {
+        const app = document.getElementById('vue-results-app');
+        if (app && app.innerHTML.includes('app-loading')) {
+          console.warn('Vue 앱 마운트 시간 초과');
+          showVueFallback('Vue 앱 마운트 시간이 초과되었습니다.');
+        }
+      }, 10000);
+      
+      // 페이지 이벤트 리스너
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('Results Vue 페이지 초기화:', window.TEST_ID);
+        
+        // 개발 환경에서 디버그 정보 출력
+        if (window.APP_ENV.isDevelopment) {
+          console.log('초기 데이터:', window.INITIAL_DATA);
+          console.log('환경 설정:', window.APP_ENV);
+        }
+      });
+      
+      // 전역 에러 핸들러
+      window.addEventListener('unhandledrejection', function(event) {
+        console.error('처리되지 않은 Promise 거부:', event.reason);
+        if (event.reason && event.reason.message && event.reason.message.includes('Vue')) {
+          showVueFallback('Vue 앱 실행 중 오류 발생');
+        }
+      });
+    </script>
+    
+    <!-- Vue 앱 스크립트 로드 -->
+    <script type="module" th:src="@{/vue-dist/results.js}" 
+            onerror="showVueFallback('Vue 스크립트를 불러올 수 없습니다.')"></script>
+  </th:block>
+</body>
+</html>

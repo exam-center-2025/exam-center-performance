@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+  <!--
+  대시보드 공통 레이아웃
+  Thymeleaf Layout Dialect 사용
+  
+  AIDEV-NOTE: 모든 대시보드 페이지의 기본 레이아웃, SEO 최적화
+  -->
+  <th:block th:replace="~{fragments/header :: head}"></th:block>
+  
+  <!-- 페이지별 추가 CSS -->
+  <th:block layout:fragment="styles">
+    <!-- 각 페이지에서 필요한 스타일 추가 -->
+  </th:block>
+</head>
+<body class="sidebar-open">
+  <!-- 헤더 네비게이션 -->
+  <th:block th:replace="~{fragments/header :: navbar}"></th:block>
+  
+  <!-- 사이드바 -->
+  <th:block th:replace="~{fragments/header :: sidebar}"></th:block>
+  
+  <!-- 페이지 래퍼 -->
+  <div class="flex flex-col min-h-screen pt-16">
+    <!-- 메인 콘텐츠 영역 -->
+    <main class="dashboard-content">
+      <!-- 페이지별 콘텐츠 -->
+      <div layout:fragment="content">
+        <!-- 각 페이지의 실제 콘텐츠가 들어갈 위치 -->
+      </div>
+    </main>
+    
+    <!-- 푸터 -->
+    <footer class="dashboard-footer">
+      <div class="max-w-full px-5">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <p class="text-gray-500 text-sm m-0">
+            <i class="fas fa-copyright"></i> 2025 Exam Center Performance Dashboard
+          </p>
+          <p class="text-gray-500 text-sm m-0">
+            <i class="fas fa-code"></i> Built with Spring Boot & Thymeleaf
+          </p>
+        </div>
+      </div>
+    </footer>
+  </div>
+  <!-- 페이지 래퍼 끝 -->
+  
+  <!-- 로딩 인디케이터 -->
+  <th:block th:replace="~{fragments/header :: loading}"></th:block>
+  
+  <!-- 알림 컨테이너 -->
+  <th:block th:replace="~{fragments/header :: alerts}"></th:block>
+  
+  <!-- 공통 스크립트 -->
+  <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+  
+  <!-- 페이지별 추가 스크립트 -->
+  <th:block layout:fragment="scripts">
+    <!-- 각 페이지에서 필요한 스크립트 추가 -->
+  </th:block>
+  
+  <!-- 페이지 초기화 스크립트 -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('대시보드 레이아웃 로드 완료 - Tailwind CSS');
+      
+      // 사이드바 토글 기능
+      const sidebarToggle = document.getElementById('sidebar-toggle');
+      const sidebar = document.getElementById('sidebar');
+      const body = document.body;
+      
+      if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+          if (body.classList.contains('sidebar-open')) {
+            body.classList.remove('sidebar-open');
+            body.classList.add('sidebar-collapsed');
+            sidebar.classList.add('collapsed');
+          } else {
+            body.classList.add('sidebar-open');
+            body.classList.remove('sidebar-collapsed');
+            sidebar.classList.remove('collapsed');
+          }
+        });
+      }
+      
+      // 페이지별 초기화 함수 호출 (있는 경우)
+      if (typeof initializePage === 'function') {
+        initializePage();
+      }
+      
+      // 툴팁 초기화 (Bootstrap 5)
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        // Tailwind에서는 툴팁 불필요
+      });
+      
+      // 모달 초기화
+      var modalTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="modal"]'));
+    });
+    
+    // 새로고침 함수
+    function refreshDashboard() {
+      location.reload();
+    }
+    
+    // 새 테스트 모달 열기
+    function openNewTestModal() {
+      // 테스트 설정 페이지로 이동
+      window.location.href = '/performance/dashboard/configure';
+    }
+  </script>
+</body>
+</html>

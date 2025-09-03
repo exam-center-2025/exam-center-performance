@@ -27,6 +27,8 @@ public class PerformanceTestResponse {
     private String scenario;
     private Map<String, Object> results;
     private String errorMessage;
+    private Integer testDurationSeconds;
+    private Integer progress;
 
     public enum TestStatus {
         PENDING,

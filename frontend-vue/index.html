@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Performance Dashboard</title>
+    
+    <!-- AIDEV-NOTE: Thymeleaf 통합을 위한 초기 상태 삽입 위치 -->
+    <script>
+      // 개발 환경에서는 기본값 사용
+      window.__INITIAL_STATE__ = window.__INITIAL_STATE__ || {
+        user: null,
+        config: {},
+        apiBase: '/api'
+      };
+    </script>
+  </head>
+  <body>
+    <!-- Vue 앱 마운트 포인트 -->
+    <div id="dashboard-app"></div>
+    <script type="module" src="/src/apps/dashboard/main.js"></script>
+  </body>
+</html>
