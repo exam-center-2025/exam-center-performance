@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white border border-gray-200 rounded-lg p-6">
     <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+      <h3 class="card-title flex items-center gap-2">
         <i class="fas fa-users"></i>
         부하 설정
       </h3>
@@ -35,7 +35,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <!-- 최대 사용자 수 -->
       <div>
-        <label for="maxUsers" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="maxUsers" class="block card-subtitle mb-2">
           최대 사용자 수 *
         </label>
         <input
@@ -51,15 +51,15 @@
           ]"
           required
         >
-        <p class="text-xs text-gray-500 mt-1">동시 접속할 최대 사용자 수</p>
-        <p v-if="errors.maxUsers" class="text-xs text-red-600 mt-1">
+        <p class="card-label mt-1">동시 접속할 최대 사용자 수</p>
+        <p v-if="errors.maxUsers" class="card-label text-red-600 mt-1">
           {{ errors.maxUsers }}
         </p>
       </div>
       
       <!-- 램프업 시간 -->
       <div>
-        <label for="rampUpSeconds" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="rampUpSeconds" class="block card-subtitle mb-2">
           램프업 시간 (초) *
         </label>
         <input
@@ -75,15 +75,15 @@
           ]"
           required
         >
-        <p class="text-xs text-gray-500 mt-1">최대 사용자까지 도달하는 시간</p>
-        <p v-if="errors.rampUpSeconds" class="text-xs text-red-600 mt-1">
+        <p class="card-label mt-1">최대 사용자까지 도달하는 시간</p>
+        <p v-if="errors.rampUpSeconds" class="card-label text-red-600 mt-1">
           {{ errors.rampUpSeconds }}
         </p>
       </div>
       
       <!-- 테스트 지속시간 -->
       <div>
-        <label for="testDurationSeconds" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="testDurationSeconds" class="block card-subtitle mb-2">
           테스트 지속시간 (초) *
         </label>
         <input
@@ -99,8 +99,8 @@
           ]"
           required
         >
-        <p class="text-xs text-gray-500 mt-1">테스트를 실행할 총 시간</p>
-        <p v-if="errors.testDurationSeconds" class="text-xs text-red-600 mt-1">
+        <p class="card-label mt-1">테스트를 실행할 총 시간</p>
+        <p v-if="errors.testDurationSeconds" class="card-label text-red-600 mt-1">
           {{ errors.testDurationSeconds }}
         </p>
       </div>
@@ -110,7 +110,7 @@
     <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
       <div class="flex items-start">
         <i class="fas fa-lightbulb text-blue-500 mt-0.5 mr-2"></i>
-        <div class="text-sm text-blue-700">
+        <div class="card-body text-blue-700">
           <strong>부하 프리셋:</strong>
           <span class="block mt-1">
             Low (50명/30초/3분) • Medium (200명/1분/5분) • High (500명/2분/10분)

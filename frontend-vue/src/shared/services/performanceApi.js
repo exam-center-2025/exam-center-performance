@@ -16,6 +16,10 @@ export const performanceApi = {
   },
 
   async stopTest(testId) {
+    return await api.post(`/tests/${testId}/stop`)
+  },
+
+  async deleteTest(testId) {
     return await api.delete(`/tests/${testId}`)
   },
 

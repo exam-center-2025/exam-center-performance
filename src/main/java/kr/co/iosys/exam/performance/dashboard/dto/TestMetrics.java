@@ -101,6 +101,12 @@ public class TestMetrics {
     private Double progress;
     
     /**
+     * 총 요청 수 - AIDEV-NOTE: Frontend에서 정확한 에러 수 계산을 위해 추가
+     */
+    @JsonProperty("totalRequests")
+    private Long totalRequests;
+    
+    /**
      * 현재 시간의 메트릭 생성
      */
     public static TestMetrics createWithCurrentTime(String testId) {
@@ -112,8 +118,31 @@ public class TestMetrics {
     
     /**
      * 전체 요청 수 계산
+     * AIDEV-NOTE: totalRequests가 직접 설정된 경우 해당 값 사용, 아니면 계산
      */
     public Long getTotalRequests() {
+        if (totalRequests != null) {
+            return totalRequests;
+        }
         return (successCount != null ? successCount : 0L) + (errorCount != null ? errorCount : 0L);
+    }
+    
+    /**
+     * 메트릭 빌드 시 totalRequests 자동 계산 - AIDEV-NOTE: 빌더 패턴에서 자동 계산 지원
+     */
+    public static class TestMetricsBuilder {
+        public TestMetrics build() {
+            TestMetrics metrics = new TestMetrics(testId, timestamp, activeUsers, tps, avgResponseTime, 
+                    minResponseTime, maxResponseTime, p95ResponseTime, p99ResponseTime, 
+                    successCount, errorCount, errorRate, progress, totalRequests);
+            
+            // totalRequests가 설정되지 않은 경우 자동 계산
+            if (metrics.totalRequests == null && (metrics.successCount != null || metrics.errorCount != null)) {
+                metrics.totalRequests = (metrics.successCount != null ? metrics.successCount : 0L) 
+                        + (metrics.errorCount != null ? metrics.errorCount : 0L);
+            }
+            
+            return metrics;
+        }
     }
 }

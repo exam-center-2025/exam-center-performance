@@ -216,6 +216,12 @@ function updateChart() {
 
   chart.data.labels = labels
   chart.data.datasets[0].data = data
+  
+  // Y축 최대값 업데이트
+  if (props.yAxisMax !== undefined) {
+    chart.options.scales.y.max = props.yAxisMax
+  }
+  
   chart.update('none') // No animation for real-time updates
 }
 
@@ -278,6 +284,14 @@ watch(() => props.data, (newData) => {
 watch(() => props.currentValue, (newValue) => {
   if (typeof newValue === 'number' && newValue !== 0) {
     addDataPoint(newValue)
+  }
+})
+
+// Watch for Y-axis max changes
+watch(() => props.yAxisMax, (newMax) => {
+  if (chart && newMax !== undefined) {
+    chart.options.scales.y.max = newMax
+    chart.update('none')
   }
 })
 

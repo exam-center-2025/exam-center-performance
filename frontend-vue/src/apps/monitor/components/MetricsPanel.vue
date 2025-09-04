@@ -1,6 +1,6 @@
 <template>
   <div class="bg-white border border-gray-200 p-4">
-    <h3 class="text-lg font-semibold text-gray-900 mb-4">실시간 메트릭</h3>
+    <h3 class="card-title mb-4">실시간 메트릭</h3>
     
     <!-- Current Status Grid -->
     <div class="grid grid-cols-2 gap-2 mb-4">
@@ -10,11 +10,11 @@
         class="metric-card"
         :class="{ 'updated': metric.updated }"
       >
-        <div class="metric-value" :class="metric.valueClass">
+        <div class="card-metric" :class="metric.valueClass">
           {{ formatMetricValue(metric.value) }}
           <span class="metric-unit">{{ metric.unit }}</span>
         </div>
-        <div class="metric-label">{{ metric.label }}</div>
+        <div class="card-label">{{ metric.label }}</div>
         <div class="metric-change" :class="metric.changeClass" v-if="metric.change">
           <i :class="metric.changeIcon" class="text-xs"></i>
           {{ Math.abs(metric.change).toFixed(1) }}{{ metric.unit }}
@@ -24,23 +24,23 @@
     
     <!-- Quick Stats -->
     <div class="border-t pt-3">
-      <h4 class="font-medium text-gray-700 mb-3">요약 통계</h4>
-      <div class="grid grid-cols-2 gap-2 text-sm">
+      <h4 class="card-subtitle mb-3">요약 통계</h4>
+      <div class="grid grid-cols-2 gap-2">
         <div class="stat-item">
-          <span class="stat-label">평균 TPS</span>
-          <span class="stat-value">{{ formatValue(avgTps, 1) }}</span>
+          <span class="card-label">평균 TPS</span>
+          <span class="card-value">{{ formatValue(avgTps, 1) }}</span>
         </div>
         <div class="stat-item">
-          <span class="stat-label">최대 TPS</span>
-          <span class="stat-value">{{ formatValue(maxTps, 1) }}</span>
+          <span class="card-label">최대 TPS</span>
+          <span class="card-value">{{ formatValue(maxTps, 1) }}</span>
         </div>
         <div class="stat-item">
-          <span class="stat-label">평균 응답시간</span>
-          <span class="stat-value">{{ formatValue(avgResponseTime, 0) }}ms</span>
+          <span class="card-label">평균 응답시간</span>
+          <span class="card-value">{{ formatValue(avgResponseTime, 0) }}ms</span>
         </div>
         <div class="stat-item">
-          <span class="stat-label">총 에러 수</span>
-          <span class="stat-value">{{ totalErrors }}</span>
+          <span class="card-label">총 에러 수</span>
+          <span class="card-value">{{ totalErrors }}</span>
         </div>
       </div>
     </div>
@@ -129,9 +129,31 @@ const avgResponseTime = computed(() => {
 })
 
 const totalErrors = computed(() => {
-  // This would need to be calculated based on error count data
-  // For now, use error rate * active users as approximation
-  return Math.round((currentMetrics.value.errorRate || 0) * (currentMetrics.value.activeUsers || 0) / 100)
+  // AIDEV-NOTE: Use actual error count if available, otherwise calculate from total requests and error rate
+  if (currentMetrics.value.errorCount !== undefined && currentMetrics.value.errorCount !== null) {
+    return currentMetrics.value.errorCount
+  }
+  
+  // Fallback: Calculate from total requests and error rate if available
+  if (currentMetrics.value.totalRequests && currentMetrics.value.errorRate) {
+    return Math.round((currentMetrics.value.totalRequests * currentMetrics.value.errorRate) / 100)
+  }
+  
+  // If history has data, sum up error counts from history
+  if (metricsHistory.value.length > 0) {
+    const totalErrorsFromHistory = metricsHistory.value.reduce((sum, m) => {
+      if (m.errorCount !== undefined) {
+        return sum + (m.errorCount || 0)
+      }
+      // Fallback to calculation if errorCount not available
+      const requests = m.totalRequests || 0
+      const rate = m.errorRate || 0
+      return sum + Math.round((requests * rate) / 100)
+    }, 0)
+    return totalErrorsFromHistory
+  }
+  
+  return 0
 })
 
 // Helper functions
@@ -221,17 +243,13 @@ watch(currentMetrics, (newMetrics) => {
   animation: pulse-blue 0.5s ease-out;
 }
 
-.metric-value {
-  @apply text-2xl font-bold mb-1 transition-colors duration-300;
-}
+/* metric-value removed, using card-metric class instead */
 
 .metric-unit {
   @apply text-sm font-normal ml-1 opacity-75;
 }
 
-.metric-label {
-  @apply text-sm text-gray-600 font-medium;
-}
+/* metric-label removed, using card-label class instead */
 
 .metric-change {
   @apply absolute top-2 right-2 text-xs font-medium;
@@ -241,13 +259,7 @@ watch(currentMetrics, (newMetrics) => {
   @apply flex justify-between items-center py-1;
 }
 
-.stat-label {
-  @apply text-gray-600;
-}
-
-.stat-value {
-  @apply font-semibold text-gray-900;
-}
+/* stat-label and stat-value removed, using card-label and card-value classes instead */
 
 @keyframes pulse-blue {
   0% {

@@ -149,7 +149,7 @@ logging:
         org.hibernate: WARN
         org.hibernate.SQL: WARN
         # WebSocket 로깅
-        org.springframework.web.socket: DEBUG
-        org.springframework.messaging: DEBUG
+        org.springframework.web.socket: WARN
+        org.springframework.messaging: WARN
         # Redis 로깅
         org.springframework.data.redis: WARN

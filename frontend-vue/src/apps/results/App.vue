@@ -8,10 +8,11 @@ AIDEV-NOTE: 기존 results.html의 모든 기능을 Vue 3로 전환
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- 페이지 헤더 -->
-    <div class="flex justify-between items-center mb-4">
-      <h1 class="text-2xl font-bold">테스트 결과 상세</h1>
-      <a href="/performance/dashboard" class="btn btn-secondary btn-sm">
-        <i class="fas fa-arrow-left"></i> 대시보드로
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">테스트 결과 상세</h1>
+      <a href="/performance/dashboard" class="btn btn-secondary">
+        <i class="fas fa-arrow-left mr-2"></i>
+        <span class="text-sm">대시보드로</span>
       </a>
     </div>
     
@@ -28,12 +29,13 @@ AIDEV-NOTE: 기존 results.html의 모든 기능을 Vue 3로 전환
     </div>
     
     <!-- 에러 상태 -->
-    <div v-else-if="error" class="bg-red-50 border border-red-200 p-4 text-center">
-      <i class="fas fa-exclamation-triangle text-red-500 text-3xl mb-4"></i>
-      <h3 class="text-lg font-semibold text-red-800 mb-2">결과 로드 실패</h3>
-      <p class="text-red-600 mb-4">{{ error }}</p>
+    <div v-else-if="error" class="bg-red-50 border border-red-200 p-6 text-center">
+      <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+      <h3 class="text-xl font-semibold text-red-800 mb-2">결과 로드 실패</h3>
+      <p class="text-base text-red-600 mb-4">{{ error }}</p>
       <button @click="loadResults" class="btn btn-primary">
-        <i class="fas fa-redo mr-2"></i>다시 시도
+        <i class="fas fa-redo mr-2"></i>
+        <span class="text-sm">다시 시도</span>
       </button>
     </div>
     
@@ -62,10 +64,10 @@ AIDEV-NOTE: 기존 results.html의 모든 기능을 Vue 3로 전환
     </div>
     
     <!-- 결과 없음 -->
-    <div v-else class="bg-yellow-50 border border-yellow-200 p-4 text-center">
-      <i class="fas fa-search text-yellow-500 text-3xl mb-4"></i>
-      <h3 class="text-lg font-semibold text-yellow-800 mb-2">결과를 찾을 수 없습니다</h3>
-      <p class="text-yellow-600">요청하신 테스트 결과가 존재하지 않습니다.</p>
+    <div v-else class="bg-yellow-50 border border-yellow-200 p-6 text-center">
+      <i class="fas fa-search text-yellow-500 text-4xl mb-4"></i>
+      <h3 class="text-xl font-semibold text-yellow-800 mb-2">결과를 찾을 수 없습니다</h3>
+      <p class="text-base text-yellow-600">요청하신 테스트 결과가 존재하지 않습니다.</p>
     </div>
   </div>
 </template>
@@ -132,7 +134,8 @@ onMounted(async () => {
 <style scoped>
 /* AIDEV-NOTE: 플랫 디자인 스타일 - 대시보드와 일치하도록 수정 */
 .btn {
-  @apply px-3 py-1 font-semibold border transition-colors duration-200 text-sm;
+  @apply px-4 py-2 font-medium border transition-colors duration-200;
+  font-family: 'Inter', 'Pretendard Variable', 'Pretendard', 'IBM Plex Sans KR', 'Noto Sans KR', sans-serif;
 }
 
 .btn-primary {
@@ -143,7 +146,8 @@ onMounted(async () => {
   @apply bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200;
 }
 
-.btn-sm {
-  @apply px-2 py-1 text-xs;
+/* 페이지 전체 폰트 적용 */
+h1, h2, h3, p, button, a {
+  font-family: 'Pretendard Variable', 'Pretendard', 'IBM Plex Sans KR', 'Noto Sans KR', 'Inter', sans-serif;
 }
 </style>

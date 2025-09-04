@@ -10,6 +10,7 @@ import kr.co.iosys.exam.performance.model.ExamPlan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -94,6 +95,14 @@ public class DashboardApiController {
                     .average()
                     .orElse(0.0);
             stats.put("avgResponseTime", Math.round(avgResponseTime * 100.0) / 100.0);
+            
+            // 평균 TPS (최근 테스트들의 평균)
+            double avgTps = recentTests.stream()
+                    .filter(t -> t.getAvgTps() != null)
+                    .mapToDouble(TestResult::getAvgTps)
+                    .average()
+                    .orElse(0.0);
+            stats.put("avgTps", Math.round(avgTps * 100.0) / 100.0);
             
             // 총 테스트 수
             stats.put("totalTests", activeTests.size() + recentTests.size());
@@ -352,13 +361,21 @@ public class DashboardApiController {
                 config.put("testName", testResult.getTestName());
                 config.put("planId", testResult.getPlanId());
                 config.put("runType", "TEST"); // 기본값 설정
-                config.put("maxUsers", testResult.getMaxConcurrentUsers());
-                config.put("rampUpSeconds", 60); // 기본값 설정
+                
+                // AIDEV-NOTE: 실제 maxUsers 값을 DB에서 가져오도록 수정
+                Integer maxUsers = dashboardService.getMaxUsers(testId);
+                config.put("maxUsers", maxUsers != null ? maxUsers : testResult.getMaxConcurrentUsers());
+                
+                // AIDEV-NOTE: 실제 rampUpSeconds 값을 DB에서 가져오도록 수정
+                Integer rampUpSeconds = dashboardService.getRampUpSeconds(testId);
+                config.put("rampUpSeconds", rampUpSeconds != null ? rampUpSeconds : 60); // DB 값 또는 기본값
+                
                 config.put("testDurationSeconds", testResult.getTestDurationSeconds());
                 config.put("status", testResult.getStatus());
                 config.put("startedAt", testResult.getStartTime());
                 
-                log.debug("테스트 설정 조회 성공: {}", testId);
+                log.debug("테스트 설정 조회 성공: testId={}, maxUsers={}, rampUpSeconds={}", 
+                         testId, maxUsers, rampUpSeconds);
                 return ResponseEntity.ok(ApiResponse.success(config));
             } else {
                 log.warn("테스트를 찾을 수 없음: {}", testId);
@@ -417,6 +434,35 @@ public class DashboardApiController {
             log.error("테스트 로그 조회 실패: {}", testId, e);
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("테스트 로그 조회 실패: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 테스트 삭제
+     * DELETE /api/dashboard/tests/{testId}
+     * 데이터베이스, Redis, 리포트 파일을 모두 삭제
+     */
+    @DeleteMapping("/tests/{testId}")
+    public ResponseEntity<ApiResponse<String>> deleteTest(@PathVariable String testId) {
+        try {
+            log.info("테스트 삭제 요청: testId={}", testId);
+            
+            // 테스트 삭제 서비스 호출
+            boolean deleted = dashboardService.deleteTest(testId);
+            
+            if (deleted) {
+                log.info("테스트 삭제 성공: testId={}", testId);
+                return ResponseEntity.ok(ApiResponse.success("테스트가 성공적으로 삭제되었습니다."));
+            } else {
+                log.warn("테스트를 찾을 수 없음: testId={}", testId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.error("테스트를 찾을 수 없습니다."));
+            }
+            
+        } catch (Exception e) {
+            log.error("테스트 삭제 실패: testId={}", testId, e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("테스트 삭제 실패: " + e.getMessage()));
         }
     }
     

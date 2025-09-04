@@ -45,6 +45,7 @@
               variant="danger"
               size="sm"
               :disabled="!isTestActive"
+              :title="buttonTooltip"
             >
               <i class="fas fa-stop mr-1"></i>
               테스트 중단
@@ -102,9 +103,36 @@ const wsStatusIndicatorClass = computed(() => ({
   'bg-red-500': !props.wsConnected && !props.wsConnecting,
 }))
 
+// AIDEV-NOTE: 테스트 종료 상태에서 버튼 비활성화
 const isTestActive = computed(() => {
   const status = performanceStore.testStatus.status
-  return status === 'RUNNING' || status === 'STARTING'
+  // 종료된 상태들: COMPLETED, FAILED, CANCELLED, STOPPED
+  const terminatedStatuses = ['COMPLETED', 'FAILED', 'CANCELLED', 'STOPPED']
+  
+  // 종료 상태가 아니고, RUNNING 또는 STARTING 상태일 때만 활성화
+  return !terminatedStatuses.includes(status) && (status === 'RUNNING' || status === 'STARTING')
+})
+
+const buttonTooltip = computed(() => {
+  const status = performanceStore.testStatus.status
+  
+  if (!isTestActive.value) {
+    switch(status) {
+      case 'COMPLETED':
+        return '테스트가 완료되었습니다'
+      case 'FAILED':
+        return '테스트가 실패했습니다'
+      case 'CANCELLED':
+        return '테스트가 취소되었습니다'
+      case 'STOPPED':
+        return '테스트가 중단되었습니다'
+      case 'STOPPING':
+        return '테스트를 중단하는 중입니다...'
+      default:
+        return '테스트가 실행 중이 아닙니다'
+    }
+  }
+  return '클릭하여 테스트를 중단합니다'
 })
 
 // AIDEV-NOTE: Navigation and control handlers

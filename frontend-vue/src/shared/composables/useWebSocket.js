@@ -1,16 +1,21 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { Client } from '@stomp/stompjs'
+
+// AIDEV-NOTE: Singleton WebSocket instance for sharing across components
+const client = ref(null)
+const connected = ref(false)
+const connecting = ref(false)
+const error = ref(null)
+const subscriptions = ref(new Map())
 
 // AIDEV-NOTE: WebSocket composable for real-time communication
 export function useWebSocket() {
-  const client = ref(null)
-  const connected = ref(false)
-  const connecting = ref(false)
-  const error = ref(null)
-  const subscriptions = ref(new Map())
 
   const connect = (url = '/ws') => {
-    if (connecting.value || connected.value) return
+    if (connecting.value || connected.value) {
+      console.log('WebSocket already connected or connecting, skipping. connected:', connected.value, 'connecting:', connecting.value)
+      return
+    }
 
     connecting.value = true
     error.value = null
@@ -31,9 +36,13 @@ export function useWebSocket() {
       heartbeatOutgoing: 4000,
       
       onConnect: (frame) => {
-        console.log('WebSocket connected:', frame)
+        // console.log('WebSocket STOMP connected:', frame)
         connected.value = true
         connecting.value = false
+        // AIDEV-NOTE: Force reactivity update to ensure components see connection immediately
+        nextTick(() => {
+          // console.log('WebSocket connection state updated, connected.value =', connected.value)
+        })
       },
       
       onDisconnect: (frame) => {
@@ -70,8 +79,13 @@ export function useWebSocket() {
   }
 
   const subscribe = (destination, callback) => {
-    if (!client.value || !connected.value) {
-      console.warn('WebSocket not connected')
+    if (!client.value) {
+      console.error('WebSocket client not initialized')
+      return null
+    }
+    
+    if (!connected.value) {
+      console.warn(`WebSocket not connected when trying to subscribe to ${destination}. connected.value = ${connected.value}`)
       return null
     }
 
@@ -79,7 +93,10 @@ export function useWebSocket() {
       const subscription = client.value.subscribe(destination, (message) => {
         try {
           const data = JSON.parse(message.body)
-          callback(data)
+          // AIDEV-NOTE: Use nextTick to ensure callback doesn't interfere with Vue reactivity
+          nextTick(() => {
+            callback(data)
+          })
         } catch (err) {
           console.error('Failed to parse message:', err)
           callback(message.body)
@@ -120,9 +137,10 @@ export function useWebSocket() {
     }
   }
 
-  onUnmounted(() => {
-    disconnect()
-  })
+  // AIDEV-NOTE: Don't disconnect on unmount for singleton instance
+  // onUnmounted(() => {
+  //   disconnect()
+  // })
 
   return {
     connected,

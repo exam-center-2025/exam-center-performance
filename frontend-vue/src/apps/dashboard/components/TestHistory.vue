@@ -38,60 +38,72 @@
     </div>
     
     <!-- Table View -->
-    <div v-else class="overflow-hidden">
+    <div v-else class="overflow-hidden border border-gray-200 rounded">
       <div class="overflow-x-auto">
-        <table class="min-w-full border border-gray-300">
-          <thead class="bg-gray-50 border-b border-gray-300">
+        <table class="min-w-full border border-gray-200 text-sm">
+          <thead class="bg-gray-50/70 border-b border-gray-200">
             <tr>
-              <th class="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer" @click="sortBy('testName')">
+              <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700 uppercase cursor-pointer" @click="sortBy('testName')">
                 Test Name
                 <span v-if="sortField === 'testName'" class="ml-1">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
               </th>
-              <th class="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer" @click="sortBy('startTime')">
+              <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700 uppercase cursor-pointer" @click="sortBy('startTime')">
                 Start Time
                 <span v-if="sortField === 'startTime'" class="ml-1">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
               </th>
-              <th class="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer" @click="sortBy('status')">
+              <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700 uppercase cursor-pointer" @click="sortBy('status')">
                 Status
                 <span v-if="sortField === 'status'" class="ml-1">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metrics</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700 uppercase">Metrics</th>
+              <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700 uppercase">Actions</th>
             </tr>
           </thead>
           <tbody class="bg-white">
             <tr
               v-for="test in paginatedTests"
-              :key="test.id"
-              class="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+              :key="test.testId"
+              class="border-b border-gray-100 hover:bg-gray-50/50 transition-colors cursor-pointer"
               @click="selectTest(test)"
             >
-              <td class="px-2 py-2 whitespace-nowrap">
+              <td class="px-3 py-2 whitespace-nowrap">
                 <div>
-                  <div class="text-sm font-medium text-gray-900">{{ test.testName || `Test #${test.id}` }}</div>
-                  <div class="text-sm text-gray-500">ID: {{ test.id }}</div>
+                  <div class="text-base font-medium text-gray-900">{{ test.testName || `Test #${test.testId}` }}</div>
+                  <div class="text-sm text-gray-500">ID: {{ test.testId }}</div>
                 </div>
               </td>
-              <td class="px-2 py-2 whitespace-nowrap">
-                <div class="text-sm text-gray-900">{{ formatDate(test.startTime) }}</div>
-                <div class="text-sm text-gray-500">Duration: {{ formatDuration(test.testDurationSeconds) }}</div>
+              <td class="px-3 py-2 whitespace-nowrap">
+                <div class="text-base text-gray-900">{{ formatDate(test.startTime) }}</div>
+                <div class="text-sm text-gray-500">{{ formatDuration(test.testDurationSeconds) }}</div>
               </td>
-              <td class="px-2 py-2 whitespace-nowrap">
+              <td class="px-3 py-2 whitespace-nowrap">
                 <span :class="getStatusBadgeClass(test.status)" class="status-badge">
                   {{ test.status }}
                 </span>
               </td>
-              <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                <div>Users: {{ test.maxUsers }}</div>
-                <div>Type: {{ test.runType || 'TEST' }}</div>
-                <div v-if="test.avgTps">TPS: {{ test.avgTps.toFixed(2) }}</div>
+              <td class="px-3 py-2 whitespace-nowrap">
+                <div class="text-sm text-gray-600">
+                  <span class="font-semibold">Users:</span> {{ test.maxConcurrentUsers || 'N/A' }}
+                </div>
+                <div class="text-sm text-gray-600">
+                  <span class="font-semibold">Type:</span> {{ test.runType || 'TEST' }}
+                </div>
+                <div v-if="test.avgTps" class="text-sm text-gray-600">
+                  <span class="font-semibold">TPS:</span> {{ test.avgTps.toFixed(2) }}
+                </div>
               </td>
-              <td class="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+              <td class="px-3 py-2 whitespace-nowrap text-base font-medium space-x-2">
                 <button
                   @click.stop="viewDetails(test)"
-                  class="text-blue-600 hover:text-blue-900"
+                  class="text-blue-600 hover:text-blue-900 text-sm font-semibold"
                 >
                   Details
+                </button>
+                <button
+                  @click.stop="confirmDelete(test)"
+                  class="text-red-600 hover:text-red-900 text-sm font-semibold ml-2"
+                >
+                  Delete
                 </button>
               </td>
             </tr>
@@ -100,19 +112,19 @@
       </div>
       
       <!-- Pagination -->
-      <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+      <div class="bg-gray-50/50 px-3 py-2 flex items-center justify-between border-t border-gray-200 sm:px-4">
         <div class="flex-1 flex justify-between sm:hidden">
           <button
             @click="previousPage"
             :disabled="currentPage === 1"
-            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+            class="relative inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
           >
             Previous
           </button>
           <button
             @click="nextPage"
             :disabled="currentPage === totalPages"
-            class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+            class="ml-3 relative inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
           >
             Next
           </button>
@@ -134,7 +146,7 @@
               <button
                 @click="previousPage"
                 :disabled="currentPage === 1"
-                class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                class="relative inline-flex items-center px-2 py-1 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
               >
                 Previous
               </button>
@@ -146,14 +158,14 @@
                   'bg-blue-50 border-blue-500 text-blue-600': page === currentPage,
                   'bg-white border-gray-300 text-gray-500 hover:bg-gray-50': page !== currentPage
                 }"
-                class="relative inline-flex items-center px-4 py-2 border text-sm font-medium"
+                class="relative inline-flex items-center px-3 py-1 border text-sm font-medium"
               >
                 {{ page }}
               </button>
               <button
                 @click="nextPage"
                 :disabled="currentPage === totalPages"
-                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                class="relative inline-flex items-center px-2 py-1 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
               >
                 Next
               </button>
@@ -163,11 +175,53 @@
       </div>
     </div>
   </div>
+
+  <!-- 삭제 확인 다이얼로그 -->
+  <div v-if="showDeleteDialog" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white border border-gray-300 p-6 w-full max-w-md">
+      <h3 class="text-lg font-bold text-gray-900 mb-4">테스트 삭제 확인</h3>
+      
+      <div class="mb-4">
+        <p class="text-sm text-gray-600 mb-2">다음 테스트를 삭제하시겠습니까?</p>
+        <div class="bg-gray-50 p-3 border border-gray-200">
+          <p class="text-sm font-medium">{{ testToDelete?.testName || 'Unknown Test' }}</p>
+          <p class="text-xs text-gray-500">ID: {{ testToDelete?.testId }}</p>
+        </div>
+      </div>
+      
+      <div class="bg-yellow-50 border border-yellow-200 p-3 mb-4">
+        <p class="text-sm text-yellow-800">
+          <i class="fas fa-exclamation-triangle mr-2"></i>
+          이 작업은 되돌릴 수 없습니다. 데이터베이스, Redis, 리포트 파일이 모두 삭제됩니다.
+        </p>
+      </div>
+      
+      <div class="flex justify-end space-x-3">
+        <button
+          @click="cancelDelete"
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 hover:bg-gray-200"
+        >
+          취소
+        </button>
+        <button
+          @click="executeDelete"
+          :disabled="isDeleting"
+          class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-red-700 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span v-if="!isDeleting">삭제</span>
+          <span v-else>
+            <i class="fas fa-spinner fa-spin mr-2"></i>삭제 중...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { usePerformanceStore } from '@shared/stores/performance'
+import performanceApi from '@shared/services/performanceApi'
 
 const store = usePerformanceStore()
 const loading = ref(false)
@@ -178,6 +232,11 @@ const sortOrder = ref('desc')
 const currentPage = ref(1)
 const pageSize = ref(10)
 
+// 삭제 관련 상태
+const showDeleteDialog = ref(false)
+const testToDelete = ref(null)
+const isDeleting = ref(false)
+
 // Computed filtered and sorted tests
 const filteredTests = computed(() => {
   let tests = [...store.testHistory]
@@ -187,7 +246,7 @@ const filteredTests = computed(() => {
     const search = searchText.value.toLowerCase()
     tests = tests.filter(test => 
       (test.testName && test.testName.toLowerCase().includes(search)) ||
-      (test.id && test.id.toString().includes(search))
+      (test.testId && test.testId.toString().includes(search))
     )
   }
   
@@ -305,6 +364,44 @@ function viewDetails(test) {
   window.location.href = `/performance/vue-dist/results.html?testId=${test.testId}`
 }
 
+// 삭제 확인 다이얼로그 표시
+function confirmDelete(test) {
+  testToDelete.value = test
+  showDeleteDialog.value = true
+}
+
+// 삭제 취소
+function cancelDelete() {
+  testToDelete.value = null
+  showDeleteDialog.value = false
+}
+
+// 테스트 삭제 실행
+async function executeDelete() {
+  if (!testToDelete.value) return
+  
+  isDeleting.value = true
+  const testId = testToDelete.value.testId
+  
+  try {
+    await performanceApi.deleteTest(testId)
+    console.log(`테스트 삭제 성공: ${testId}`)
+    
+    // 목록 새로고침
+    await refreshHistory()
+    
+    // 다이얼로그 닫기
+    showDeleteDialog.value = false
+    testToDelete.value = null
+    
+  } catch (error) {
+    console.error('테스트 삭제 실패:', error)
+    alert('테스트 삭제 중 오류가 발생했습니다.')
+  } finally {
+    isDeleting.value = false
+  }
+}
+
 // Format date
 function formatDate(timestamp) {
   if (!timestamp) return '-'
@@ -346,7 +443,7 @@ function selectTest(test) {
 <style scoped>
 /* 플랫 헤더 스타일 */
 .flat-header {
-  @apply text-base font-bold text-gray-900 pb-2 mb-2 border-b border-gray-300;
+  @apply text-sm font-bold text-gray-900 pb-1 mb-2 border-b border-gray-300;
 }
 
 /* 플랫 입력 필드 */
@@ -355,6 +452,7 @@ function selectTest(test) {
   border-radius: 0;
   box-shadow: none;
   transition: border-color 0.2s ease;
+  height: 32px; /* 고정 높이로 통일성 유지 */
 }
 
 .flat-input:focus {
@@ -363,8 +461,9 @@ function selectTest(test) {
 
 /* 플랫 상태 배지 */
 .status-badge {
-  @apply inline-flex px-2 py-0.5 text-xs font-bold uppercase border;
+  @apply inline-flex px-2 py-1 text-sm font-semibold uppercase border;
   border-radius: 0;
+  letter-spacing: 0.025em;
 }
 
 .status-running {

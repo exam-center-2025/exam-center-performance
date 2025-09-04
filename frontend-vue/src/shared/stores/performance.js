@@ -46,11 +46,17 @@ export const usePerformanceStore = defineStore('performance', () => {
     avgResponseTime: 0,
     activeUsers: 0,
     errorRate: 0,
+    errorCount: 0,  // AIDEV-NOTE: Added actual error count
+    totalRequests: 0,  // AIDEV-NOTE: Added total requests for accurate calculation
     timestamp: null
   })
   
   const metricsHistory = ref([])
   const maxHistorySize = ref(300) // 5 minutes of data at 1-second intervals
+  
+  // AIDEV-NOTE: Store pattern for real-time metrics - 중앙 관리로 반응성 보장
+  const testMetrics = ref({}) // { testId: { tps, activeUsers, avgResponseTime, ... } }
+  const metricsSubscriptions = ref(new Map()) // WebSocket subscriptions management
   
   const testStatus = ref({
     status: 'UNKNOWN',
@@ -86,6 +92,18 @@ export const usePerformanceStore = defineStore('performance', () => {
   const isTestRunning = computed(() => 
     currentTest.value?.status === 'RUNNING'
   )
+  
+  // AIDEV-NOTE: Computed for real-time metrics with guaranteed reactivity
+  const getTestMetric = computed(() => {
+    return (testId, metricKey) => {
+      const metrics = testMetrics.value[testId]
+      return metrics ? (metrics[metricKey] || 0) : 0
+    }
+  })
+  
+  const getTestMetrics = computed(() => {
+    return (testId) => testMetrics.value[testId] || {}
+  })
 
   // Actions
   async function loadPlans() {
@@ -108,7 +126,16 @@ export const usePerformanceStore = defineStore('performance', () => {
       loading.value = true
       error.value = null
       const result = await performanceApi.getAllTests()
+      const previousActiveCount = activeTests.value.length
       tests.value = result || []
+      
+      // Enhanced logging for debugging
+      console.log('loadTests completed:', {
+        totalTests: tests.value.length,
+        previousActiveTests: previousActiveCount,
+        currentActiveTests: activeTests.value.length,
+        runningTests: tests.value.filter(test => test.status === 'RUNNING').map(t => ({ id: t.testId, status: t.status }))
+      })
     } catch (err) {
       error.value = err.message
       console.error('Failed to load tests:', err)
@@ -232,6 +259,52 @@ export const usePerformanceStore = defineStore('performance', () => {
     }
   }
   
+  // AIDEV-NOTE: Store pattern - 중앙 메트릭 업데이트로 반응성 보장
+  function updateTestMetrics(testId, metrics) {
+    // Vue 3 반응성 보장을 위해 새 객체 할당
+    const newMetrics = {
+      ...testMetrics.value,
+      [testId]: {
+        ...metrics,
+        lastUpdated: Date.now()
+      }
+    }
+    testMetrics.value = newMetrics
+    // console.log(`Store: Updated metrics for test ${testId}`, metrics)
+  }
+  
+  function clearTestMetrics(testId) {
+    const newMetrics = { ...testMetrics.value }
+    delete newMetrics[testId]
+    testMetrics.value = newMetrics
+    console.log(`Store: Cleared metrics for test ${testId}`)
+  }
+  
+  function clearAllTestMetrics() {
+    testMetrics.value = {}
+    console.log('Store: Cleared all test metrics')
+  }
+  
+  function registerMetricsSubscription(testId, subscription) {
+    metricsSubscriptions.value.set(testId, subscription)
+    console.log(`Store: Registered subscription for test ${testId}`)
+  }
+  
+  function unregisterMetricsSubscription(testId) {
+    const subscription = metricsSubscriptions.value.get(testId)
+    if (subscription) {
+      if (typeof subscription.unsubscribe === 'function') {
+        subscription.unsubscribe()
+      }
+      metricsSubscriptions.value.delete(testId)
+      console.log(`Store: Unregistered subscription for test ${testId}`)
+    }
+  }
+  
+  function hasMetricsSubscription(testId) {
+    return metricsSubscriptions.value.has(testId)
+  }
+  
   function updateTestStatus(status) {
     testStatus.value = { ...testStatus.value, ...status }
   }
@@ -255,6 +328,8 @@ export const usePerformanceStore = defineStore('performance', () => {
       avgResponseTime: 0,
       activeUsers: 0,
       errorRate: 0,
+      errorCount: 0,
+      totalRequests: 0,
       timestamp: null
     }
     metricsHistory.value = []
@@ -296,12 +371,13 @@ export const usePerformanceStore = defineStore('performance', () => {
   async function loadQuickStats() {
     try {
       const stats = await performanceApi.getQuickStats()
+      // AIDEV-NOTE: Map backend field names to frontend expectations
       quickStats.value = {
-        todayTests: stats.todayTests || 0,
-        avgSuccessRate: stats.avgSuccessRate || 0,
-        avgTps: stats.avgTps || 0,
+        todayTests: stats.totalTests || 0,  // Using totalTests as todayTests
+        avgSuccessRate: (stats.successRate || 0) / 100,  // Convert percentage to decimal
+        avgTps: stats.avgTps || 0,  // Not provided by backend, default to 0
         avgResponseTime: stats.avgResponseTime || 0,
-        activeTestsCount: stats.activeTestsCount || 0
+        activeTestsCount: stats.activeTests || 0  // Map activeTests to activeTestsCount
       }
     } catch (err) {
       console.error('Failed to load quick stats:', err)
@@ -369,6 +445,20 @@ export const usePerformanceStore = defineStore('performance', () => {
       lastUpdated: Date.now()
     }
   }
+  
+  // AIDEV-NOTE: Debug function to check store state
+  function debugStoreState() {
+    console.log('Store Debug State:', {
+      testsCount: tests.value.length,
+      activeTestsCount: activeTests.value.length,
+      testsWithStatus: tests.value.map(t => ({ id: t.testId, status: t.status })),
+      activeTestsDetails: activeTests.value.map(t => ({ id: t.testId, status: t.status }))
+    })
+    return {
+      tests: tests.value,
+      activeTests: activeTests.value
+    }
+  }
 
   return {
     // State
@@ -393,11 +483,15 @@ export const usePerformanceStore = defineStore('performance', () => {
     testStatus,
     logEntries,
     maxLogEntries,
+    testMetrics, // AIDEV-NOTE: Central metrics storage
+    metricsSubscriptions,
     
     // Getters
     activeTests,
     completedTests,
     isTestRunning,
+    getTestMetric, // AIDEV-NOTE: Reactive metric getter
+    getTestMetrics, // AIDEV-NOTE: Reactive metrics getter
     
     // Actions
     loadPlans,
@@ -423,6 +517,17 @@ export const usePerformanceStore = defineStore('performance', () => {
     updateTestStatus,
     addLogEntry,
     clearMonitoringData,
-    getRecentMetricsHistory
+    getRecentMetricsHistory,
+    
+    // Test metrics actions - AIDEV-NOTE: Store pattern for metrics
+    updateTestMetrics,
+    clearTestMetrics,
+    clearAllTestMetrics,
+    registerMetricsSubscription,
+    unregisterMetricsSubscription,
+    hasMetricsSubscription,
+    
+    // Debug function
+    debugStoreState
   }
 })

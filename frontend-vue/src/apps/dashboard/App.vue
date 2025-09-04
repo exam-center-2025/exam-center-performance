@@ -95,13 +95,31 @@ async function checkDatabaseHealth() {
 }
 
 
+// WebSocket 연결 대기 함수
+const waitForWebSocketConnection = async (maxRetries = 20, retryDelay = 200) => {
+  for (let i = 0; i < maxRetries; i++) {
+    if (ws.connected.value) {
+      console.log('WebSocket connected successfully')
+      return true
+    }
+    await new Promise(resolve => setTimeout(resolve, retryDelay))
+  }
+  console.warn('WebSocket connection timeout')
+  return false
+}
+
 // Initialize
 onMounted(async () => {
-  // Connect WebSocket
+  // AIDEV-NOTE: Make store available globally for debugging
+  if (import.meta.env.DEV) {
+    window.debugStore = store
+  }
+  
+  // Connect WebSocket first
   ws.connect('/ws')
   
-  // Load initial data
-  await Promise.all([
+  // Load initial data (can run in parallel with WebSocket connection)
+  const dataLoadPromise = Promise.all([
     store.loadPlans(),
     store.loadTests(),
     store.loadTestHistory(),
@@ -109,21 +127,47 @@ onMounted(async () => {
     checkDatabaseHealth()
   ])
   
-  // Subscribe to metrics if test is running
-  if (store.isTestRunning && store.currentTest?.id) {
-    ws.subscribe(`/topic/metrics/${store.currentTest.id}`, (data) => {
-      console.log('Received metrics:', data)
+  // Wait for WebSocket connection
+  const isConnected = await waitForWebSocketConnection()
+  
+  // Wait for data load to complete
+  await dataLoadPromise
+  
+  // Only subscribe if WebSocket is connected
+  if (isConnected) {
+    // Subscribe to metrics if test is running
+    if (store.isTestRunning && store.currentTest?.id) {
+      ws.subscribe(`/topic/metrics/${store.currentTest.id}`, (data) => {
+        console.log('Received metrics:', data)
+      })
+    }
+    
+    // Subscribe to test started events
+    ws.subscribe('/topic/test-started', async (data) => {
+      console.log('Test started event received:', data)
+      console.log('Store state before loadTests:', store.debugStoreState())
+      
+      // Reload tests to update active tests list
+      await store.loadTests()
+      
+      console.log('Store state after loadTests:', store.debugStoreState())
+      
+      // Also refresh quick stats
+      store.loadQuickStats()
+      // ActiveTests 컴포넌트가 자동으로 메트릭 구독 처리
     })
+    
+    // Subscribe to test completion events
+    ws.subscribe('/topic/test-completed', (data) => {
+      console.log('Test completed:', data)
+      // Refresh quick stats and history
+      store.loadQuickStats()
+      store.loadTestHistory()
+      store.loadTests()
+    })
+  } else {
+    console.error('WebSocket connection failed, real-time features will be disabled')
   }
-  
-  
-  // Subscribe to test completion events
-  ws.subscribe('/topic/test-completed', (data) => {
-    console.log('Test completed:', data)
-    // Refresh quick stats and history
-    store.loadQuickStats()
-    store.loadTestHistory()
-  })
   
   // Set up periodic data refresh
   setInterval(() => {

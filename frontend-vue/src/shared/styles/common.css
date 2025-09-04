@@ -11,7 +11,7 @@ Tailwind CSS와 함께 사용, 일관된 디자인 언어
 @import 'tailwindcss/utilities';
 
 /* 폰트 설정 */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
 
 /* CSS 변수 - 디자인 토큰 */
 :root {
@@ -37,8 +37,8 @@ Tailwind CSS와 함께 사용, 일관된 디자인 언어
   --color-gray-900: #111827;
   
   /* 타이포그래피 */
-  --font-family-sans: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-family-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  --font-family-sans: 'Pretendard Variable', 'Pretendard', 'IBM Plex Sans KR', 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-family-mono: 'Inter', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
   
   /* 간격 */
   --spacing-xs: 0.25rem;

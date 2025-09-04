@@ -9,54 +9,54 @@ AIDEV-NOTE: 기존 results.html의 메트릭 카드 섹션을 Vue로 전환
   <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
     <!-- 성공률 (Primary 강조) -->
     <div class="metric-card primary group" :class="getSuccessRateClass(testResult.successRate)">
-      <div class="text-3xl font-bold text-gray-900 mb-2 font-['Inter'] transition-transform group-hover:scale-110">
+      <div class="card-metric mb-2 font-['Inter'] transition-transform group-hover:scale-110">
         {{ formatPercentage(testResult.successRate) }}
       </div>
-      <div class="text-gray-800 font-semibold text-sm font-['Noto Sans KR']">성공률</div>
+      <div class="card-label">성공률</div>
       <div class="metric-indicator" :class="getSuccessRateIndicator(testResult.successRate)"></div>
     </div>
     
     <!-- 총 요청 수 -->
     <div class="metric-card group">
-      <div class="text-3xl font-bold text-gray-900 mb-2 font-['Inter'] transition-transform group-hover:scale-110">
+      <div class="card-metric mb-2 font-['Inter'] transition-transform group-hover:scale-110">
         {{ formatNumber(testResult.totalRequests) }}
       </div>
-      <div class="text-gray-800 font-semibold text-sm font-['Noto Sans KR']">총 요청 수</div>
+      <div class="card-label">총 요청 수</div>
       <i class="metric-icon fas fa-exchange-alt text-blue-500"></i>
     </div>
     
     <!-- 평균 응답시간 -->
     <div class="metric-card group">
-      <div class="text-3xl font-bold text-gray-900 mb-2 font-['Inter'] transition-transform group-hover:scale-110">
+      <div class="card-metric mb-2 font-['Inter'] transition-transform group-hover:scale-110">
         {{ formatResponseTime(testResult.avgResponseTime) }}
       </div>
-      <div class="text-gray-800 font-semibold text-sm font-['Noto Sans KR']">평균 응답시간</div>
+      <div class="card-label">평균 응답시간</div>
       <i class="metric-icon fas fa-clock text-green-500"></i>
     </div>
     
     <!-- 최대 TPS -->
     <div class="metric-card group">
-      <div class="text-3xl font-bold text-gray-900 mb-2 font-['Inter'] transition-transform group-hover:scale-110">
+      <div class="card-metric mb-2 font-['Inter'] transition-transform group-hover:scale-110">
         {{ formatDecimal(testResult.maxTps, 1) }}
       </div>
-      <div class="text-gray-800 font-semibold text-sm font-['Noto Sans KR']">최대 TPS</div>
+      <div class="card-label">최대 TPS</div>
       <i class="metric-icon fas fa-tachometer-alt text-purple-500"></i>
     </div>
     
     <!-- P95 응답시간 -->
     <div class="metric-card">
-      <div class="text-2xl font-bold text-gray-900 mb-1">
+      <div class="card-metric mb-1">
         {{ formatResponseTime(testResult.p95ResponseTime) }}
       </div>
-      <div class="text-gray-600 font-semibold text-xs uppercase">P95 응답시간</div>
+      <div class="card-label uppercase">P95 응답시간</div>
     </div>
     
     <!-- 최대 동시 사용자 -->
     <div class="metric-card group">
-      <div class="text-3xl font-bold text-gray-900 mb-2 font-['Inter'] transition-transform group-hover:scale-110">
+      <div class="card-metric mb-2 font-['Inter'] transition-transform group-hover:scale-110">
         {{ formatNumber(testResult.maxConcurrentUsers) }}
       </div>
-      <div class="text-gray-800 font-semibold text-sm font-['Noto Sans KR']">최대 동시 사용자</div>
+      <div class="card-label">최대 동시 사용자</div>
       <i class="metric-icon fas fa-users text-indigo-500"></i>
     </div>
   </div>
@@ -135,6 +135,7 @@ const stats = computed(() => ({
 .metric-card {
   @apply p-6 text-center bg-white border border-gray-200 relative overflow-hidden;
   transition: all 0.2s ease-in-out;
+  font-family: 'Pretendard Variable', 'Pretendard', 'IBM Plex Sans KR', 'Noto Sans KR', 'Inter', sans-serif;
 }
 
 .metric-card:hover {
@@ -165,6 +166,19 @@ const stats = computed(() => ({
   @apply border-red-500 bg-red-50;
 }
 
+/* 카드 메트릭 값 */
+.card-metric {
+  @apply text-2xl font-bold text-gray-900;
+  font-family: 'Inter', 'Pretendard Variable', sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 카드 레이블 */
+.card-label {
+  @apply text-sm text-gray-600 font-medium;
+  font-family: 'Pretendard Variable', 'Pretendard', 'Noto Sans KR', sans-serif;
+}
+
 /* 메트릭 아이콘 */
 .metric-icon {
   @apply absolute top-3 right-3 text-lg opacity-30;
@@ -181,8 +195,8 @@ const stats = computed(() => ({
     @apply p-4;
   }
   
-  .text-3xl {
-    @apply text-2xl;
+  .card-metric {
+    @apply text-xl;
   }
   
   .metric-icon {

@@ -181,7 +181,7 @@ onMounted(() => {
 
 /* 플랫 입력 필드 */
 .flat-input {
-  @apply w-full px-2 py-1 border border-gray-300 bg-white text-gray-900 text-sm;
+  @apply w-full px-3 py-2 border border-gray-300 bg-white text-gray-900 text-base;  /* text-sm을 text-base로, 패딩 증가 */
   border-radius: 0;
   box-shadow: none;
   transition: border-color 0.2s ease;
@@ -193,12 +193,12 @@ onMounted(() => {
 
 /* 플랫 라벨 */
 .flat-label {
-  @apply block text-xs font-semibold text-gray-600 mb-0.5 uppercase;
+  @apply block text-sm font-semibold text-gray-600 mb-1 uppercase;  /* text-xs를 text-sm으로 개선 */
 }
 
 /* 플랫 버튼 - Danger 스타일 */
 .flat-btn {
-  @apply px-3 py-1 text-sm font-semibold border transition-colors duration-200;
+  @apply px-4 py-2 text-base font-semibold border transition-colors duration-200;  /* 패딩과 폰트 크기 증가 */
   border-radius: 0;
   box-shadow: none;
 }

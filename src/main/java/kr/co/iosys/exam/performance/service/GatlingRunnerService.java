@@ -14,6 +14,7 @@ import kr.co.iosys.exam.performance.repository.TestResultsSummaryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import kr.co.iosys.exam.performance.dashboard.dto.TestMetrics;
@@ -52,6 +53,7 @@ public class GatlingRunnerService {
     private final TestMetricsHistoryRepository testMetricsHistoryRepository;
     private final ObjectMapper objectMapper;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final SimpMessagingTemplate messagingTemplate;
 
     // 실행 중인 테스트 추적을 위한 맵
     private final Map<String, PerformanceTestResponse> runningTests = new ConcurrentHashMap<>();
@@ -65,7 +67,8 @@ public class GatlingRunnerService {
                                PerformanceTestRepository performanceTestRepository,
                                TestResultsSummaryRepository testResultsSummaryRepository,
                                TestMetricsHistoryRepository testMetricsHistoryRepository,
-                               RedisTemplate<String, Object> redisTemplate) {
+                               RedisTemplate<String, Object> redisTemplate,
+                               SimpMessagingTemplate messagingTemplate) {
         this.properties = properties;
         this.configurationService = configurationService;
         this.databaseService = databaseService;
@@ -74,6 +77,7 @@ public class GatlingRunnerService {
         this.testMetricsHistoryRepository = testMetricsHistoryRepository;
         this.objectMapper = new ObjectMapper();
         this.redisTemplate = redisTemplate;
+        this.messagingTemplate = messagingTemplate;
         this.executorService = Executors.newFixedThreadPool(
                 properties.getGatling().getMaxConcurrentTests());
     }
@@ -109,6 +113,41 @@ public class GatlingRunnerService {
         
         // DB에 테스트 정보 저장
         saveTestToDatabase(testId, request, response);
+        
+        // Redis에 활성 테스트 추가 (즉시 반영되도록 동기로 실행)
+        try {
+            redisTemplate.opsForSet().add("tests:active", testId);
+            log.info("Redis에 활성 테스트 추가: {}", testId);
+            
+            // 초기 메트릭 생성 및 저장
+            TestMetrics initialMetrics = TestMetrics.builder()
+                    .testId(testId)
+                    .timestamp(System.currentTimeMillis())
+                    .activeUsers(0)
+                    .tps(0.0)
+                    .avgResponseTime(0.0)
+                    .minResponseTime(0.0)
+                    .maxResponseTime(0.0)
+                    .successCount(0L)
+                    .errorCount(0L)
+                    .errorRate(0.0)
+                    .progress(0.0)
+                    .build();
+            
+            String metricsKey = String.format("metrics:current:%s", testId);
+            redisTemplate.opsForValue().set(metricsKey, objectMapper.writeValueAsString(initialMetrics));
+            log.info("초기 메트릭 생성: {}", testId);
+        } catch (Exception e) {
+            log.error("Redis에 활성 테스트 추가 실패: {}", e.getMessage());
+        }
+
+        // WebSocket으로 테스트 시작 이벤트 전송
+        try {
+            messagingTemplate.convertAndSend("/topic/test-started", response);
+            log.info("테스트 시작 이벤트 전송: {}", testId);
+        } catch (Exception e) {
+            log.error("테스트 시작 이벤트 전송 실패: {}", e.getMessage());
+        }
 
         // 비동기로 테스트 실행
         executeTestAsync(testId, request);
@@ -187,9 +226,6 @@ public class GatlingRunnerService {
         try {
             log.info("Gatling 테스트 실행 시작: {}", testId);
             updateTestStatus(testId, PerformanceTestResponse.TestStatus.RUNNING, null);
-            
-            // Redis에 활성 테스트 추가
-            redisTemplate.opsForSet().add("tests:active", testId);
 
             // 테스트 설정 생성
             Map<String, Object> testConfig = configurationService.createTestConfiguration(request);

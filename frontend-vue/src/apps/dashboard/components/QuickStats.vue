@@ -9,8 +9,8 @@
           </svg>
         </div>
         <div class="ml-3">
-          <p class="text-xs font-medium text-gray-500 uppercase">Today Tests</p>
-          <p class="text-lg font-bold text-gray-900">{{ store.quickStats.todayTests }}</p>
+          <p class="card-label uppercase">Today Tests</p>
+          <p class="card-metric">{{ store.quickStats.todayTests }}</p>
         </div>
       </div>
     </div>
@@ -24,8 +24,8 @@
           </svg>
         </div>
         <div class="ml-3">
-          <p class="text-xs font-medium text-gray-500 uppercase">Success Rate</p>
-          <p class="text-lg font-bold text-gray-900">{{ formatPercentage(store.quickStats.avgSuccessRate) }}%</p>
+          <p class="card-label uppercase">Success Rate</p>
+          <p class="card-metric">{{ formatPercentage(store.quickStats.avgSuccessRate) }}%</p>
         </div>
       </div>
     </div>
@@ -39,8 +39,8 @@
           </svg>
         </div>
         <div class="ml-3">
-          <p class="text-xs font-medium text-gray-500 uppercase">Avg TPS</p>
-          <p class="text-lg font-bold text-gray-900">{{ formatNumber(store.quickStats.avgTps) }}</p>
+          <p class="card-label uppercase">Avg TPS</p>
+          <p class="card-metric">{{ formatNumber(store.quickStats.avgTps) }}</p>
         </div>
       </div>
     </div>
@@ -54,8 +54,8 @@
           </svg>
         </div>
         <div class="ml-3">
-          <p class="text-xs font-medium text-gray-500 uppercase">Avg Response</p>
-          <p class="text-lg font-bold text-gray-900">{{ formatNumber(store.quickStats.avgResponseTime) }}ms</p>
+          <p class="card-label uppercase">Avg Response</p>
+          <p class="card-metric">{{ formatNumber(store.quickStats.avgResponseTime) }}ms</p>
         </div>
       </div>
     </div>
@@ -67,8 +67,8 @@
           <div class="w-3 h-3 bg-red-500 animate-pulse"></div>
         </div>
         <div class="ml-3">
-          <p class="text-xs font-medium text-gray-500 uppercase">Active Tests</p>
-          <p class="text-lg font-bold text-gray-900">{{ store.quickStats.activeTestsCount }}</p>
+          <p class="card-label uppercase">Active Tests</p>
+          <p class="card-metric">{{ store.quickStats.activeTestsCount }}</p>
         </div>
       </div>
     </div>
@@ -98,6 +98,7 @@ function formatPercentage(value) {
   border-radius: 0;
   box-shadow: none;
   transition: all 0.2s ease;
+  font-family: 'Pretendard Variable', 'Pretendard', 'IBM Plex Sans KR', 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
 .metric-card:hover {
@@ -109,5 +110,19 @@ function formatPercentage(value) {
 .icon-box {
   @apply p-2 bg-white;
   border-radius: 0;
+}
+
+/* 카드 레이블 - 작고 연한 텍스트 */
+.card-label {
+  @apply text-xs text-gray-500 font-medium tracking-wide;
+  font-family: 'Inter', 'Pretendard Variable', 'Pretendard', 'IBM Plex Sans KR', 'Noto Sans KR', sans-serif;
+}
+
+/* 카드 메트릭 값 - 크고 진한 숫자 */
+.card-metric {
+  @apply text-xl font-semibold text-gray-900;
+  font-family: 'Inter', 'Pretendard Variable', 'Pretendard', sans-serif;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
 }
 </style>

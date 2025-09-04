@@ -202,7 +202,13 @@ export function useMonitoring(testId) {
   function handleMetricsMessage(data) {
     try {
       console.debug('Received metrics:', data)
-      performanceStore.updateMetrics(data)
+      // AIDEV-NOTE: Ensure errorCount and totalRequests are included in metrics
+      const enrichedMetrics = {
+        ...data,
+        errorCount: data.errorCount ?? data.errors ?? 0,
+        totalRequests: data.totalRequests ?? data.requests ?? 0
+      }
+      performanceStore.updateMetrics(enrichedMetrics)
     } catch (err) {
       console.error('Failed to handle metrics message:', err)
     }

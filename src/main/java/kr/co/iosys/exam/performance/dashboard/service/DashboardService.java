@@ -9,6 +9,7 @@ import kr.co.iosys.exam.performance.dashboard.repository.TestMetricsQueryReposit
 import kr.co.iosys.exam.performance.dashboard.repository.TestMetricsHistoryRepository;
 import kr.co.iosys.exam.performance.model.ExamPlan;
 import kr.co.iosys.exam.performance.repository.ExamPlanRepository;
+import kr.co.iosys.exam.performance.repository.PerformanceTestRepository;
 import kr.co.iosys.exam.performance.service.GatlingRunnerService;
 import kr.co.iosys.exam.performance.dto.PerformanceTestRequest;
 import kr.co.iosys.exam.performance.dto.PerformanceTestResponse;
@@ -18,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,6 +43,7 @@ public class DashboardService {
     private final TestResultQueryRepository testResultRepository;
     private final TestMetricsQueryRepository testMetricsRepository;
     private final TestMetricsHistoryRepository testMetricsHistoryRepository;
+    private final PerformanceTestRepository performanceTestRepository;
     private final GatlingRunnerService gatlingRunnerService;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
@@ -489,6 +492,106 @@ public class DashboardService {
     }
     
     /**
+     * 테스트 삭제
+     * 데이터베이스, Redis, 리포트 파일 삭제
+     */
+    @Transactional
+    public boolean deleteTest(String testId) {
+        log.info("테스트 삭제 시작: {}", testId);
+        
+        try {
+            // 1. 데이터베이스에서 테스트 정보 조회
+            Optional<Object[]> result = testResultRepository.findByTestId(testId);
+            if (!result.isPresent()) {
+                log.warn("삭제할 테스트를 찾을 수 없음: {}", testId);
+                return false;
+            }
+            
+            Object[] data = result.get();
+            String reportPath = (String) data[21]; // report_path 컬럼
+            
+            // 2. Redis에서 관련 데이터 삭제
+            deleteRedisData(testId);
+            
+            // 3. 리포트 파일 삭제
+            if (reportPath != null && !reportPath.isEmpty()) {
+                deleteReportFiles(reportPath);
+            }
+            
+            // 4. 데이터베이스에서 삭제
+            // performance_tests 테이블 삭제 (CASCADE로 관련 테이블도 삭제됨)
+            performanceTestRepository.deleteById(testId);
+            
+            log.info("테스트 삭제 완료: {}", testId);
+            return true;
+            
+        } catch (Exception e) {
+            log.error("테스트 삭제 실패: {}", testId, e);
+            throw new RuntimeException("테스트 삭제 중 오류 발생: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Redis에서 테스트 관련 데이터 삭제
+     */
+    private void deleteRedisData(String testId) {
+        try {
+            // 활성 테스트 목록에서 제거
+            redisTemplate.opsForSet().remove(REDIS_KEY_ACTIVE_TESTS, testId);
+            
+            // 테스트 메트릭 데이터 삭제
+            String metricsKey = "test:metrics:" + testId;
+            redisTemplate.delete(metricsKey);
+            
+            // 실시간 데이터 삭제
+            String realtimeKey = "test:realtime:" + testId;
+            redisTemplate.delete(realtimeKey);
+            
+            // 테스트 상태 데이터 삭제
+            String statusKey = "test:status:" + testId;
+            redisTemplate.delete(statusKey);
+            
+            log.info("Redis 데이터 삭제 완료: {}", testId);
+        } catch (Exception e) {
+            log.error("Redis 데이터 삭제 실패: {}", testId, e);
+        }
+    }
+    
+    /**
+     * 리포트 파일 삭제
+     */
+    private void deleteReportFiles(String reportPath) {
+        try {
+            java.nio.file.Path path = null;
+            
+            if (reportPath.startsWith("build/reports/gatling/")) {
+                // build/reports/gatling/test-xxx 형식
+                path = java.nio.file.Paths.get(reportPath);
+            } else if (reportPath.startsWith("local-reports/")) {
+                // local-reports/path 형식
+                path = java.nio.file.Paths.get(reportPath);
+            } else if (!reportPath.startsWith("/")) {
+                // 상대 경로인 경우
+                path = java.nio.file.Paths.get("build/reports/gatling", reportPath);
+            }
+            
+            if (path != null && java.nio.file.Files.exists(path)) {
+                // 디렉토리와 하위 파일 모두 삭제
+                java.nio.file.Files.walk(path)
+                    .sorted(java.util.Comparator.reverseOrder())
+                    .map(java.nio.file.Path::toFile)
+                    .forEach(java.io.File::delete);
+                    
+                log.info("리포트 파일 삭제 완료: {}", reportPath);
+            } else {
+                log.warn("리포트 파일이 존재하지 않음: {}", reportPath);
+            }
+        } catch (Exception e) {
+            log.error("리포트 파일 삭제 실패: {}", reportPath, e);
+        }
+    }
+    
+    /**
      * 테스트 리포트 URL 조회
      * Gatling 리포트 경로 반환
      */
@@ -529,6 +632,42 @@ public class DashboardService {
             }
         } catch (Exception e) {
             log.error("리포트 URL 조회 실패: {}", testId, e);
+            return null;
+        }
+    }
+    
+    /**
+     * 테스트의 rampUpSeconds 값 조회
+     * AIDEV-NOTE: performance_tests 테이블에서 실제 ramp_up_seconds 값을 가져옴
+     * 
+     * @param testId 테스트 ID
+     * @return rampUpSeconds 값 (없으면 null)
+     */
+    public Integer getRampUpSeconds(String testId) {
+        try {
+            return performanceTestRepository.findById(testId)
+                    .map(test -> test.getRampUpSeconds())
+                    .orElse(null);
+        } catch (Exception e) {
+            log.error("rampUpSeconds 조회 실패: {}", testId, e);
+            return null;
+        }
+    }
+    
+    /**
+     * 테스트의 maxUsers 값 조회
+     * AIDEV-NOTE: performance_tests 테이블에서 실제 max_users 값을 가져옴
+     * 
+     * @param testId 테스트 ID
+     * @return maxUsers 값 (없으면 null)
+     */
+    public Integer getMaxUsers(String testId) {
+        try {
+            return performanceTestRepository.findById(testId)
+                    .map(test -> test.getMaxUsers())
+                    .orElse(null);
+        } catch (Exception e) {
+            log.error("maxUsers 조회 실패: {}", testId, e);
             return null;
         }
     }

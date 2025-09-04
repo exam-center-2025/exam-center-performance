@@ -6,7 +6,7 @@
   <Card title="최근 테스트 결과" class="recent-results-table">
     <template #header>
       <div class="flex items-center space-x-2">
-        <span class="text-xs text-gray-500 bg-gray-50 px-3 py-1 border border-gray-200 rounded">
+        <span class="text-base text-gray-500 bg-gray-50 px-3 py-1 border border-gray-200 rounded">
           최근 {{ results.length }}개
         </span>
       </div>
@@ -15,14 +15,14 @@
     <!-- 로딩 상태 -->
     <div v-if="loading" class="flex items-center justify-center py-8">
       <div class="loading-spinner"></div>
-      <span class="ml-2 text-sm text-gray-600">결과를 불러오는 중...</span>
+      <span class="ml-2 text-base text-gray-600">결과를 불러오는 중...</span>
     </div>
 
     <!-- 빈 상태 -->
     <div v-else-if="!results.length" class="text-center py-8">
       <i class="fas fa-chart-line text-gray-400 text-3xl mb-3"></i>
       <p class="text-gray-500">최근 테스트 결과가 없습니다.</p>
-      <p class="text-sm text-gray-400 mt-1">테스트를 실행하면 결과가 표시됩니다.</p>
+      <p class="text-base text-gray-400 mt-1">테스트를 실행하면 결과가 표시됩니다.</p>
     </div>
 
     <!-- 결과 목록 -->
@@ -34,23 +34,23 @@
       >
         <div class="flex items-center justify-between mb-2">
           <div class="flex items-center space-x-2">
-            <h4 class="text-sm font-medium text-gray-900">
+            <h4 class="text-base font-medium text-gray-900">
               {{ result.testName || result.planName || 'Unknown Test' }}
             </h4>
             <span 
-              class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+              class="inline-flex items-center px-2 py-1 rounded-full text-base font-medium"
               :class="getStatusBadgeClass(result.status)"
             >
               {{ getStatusText(result.status) }}
             </span>
           </div>
-          <div class="text-xs text-gray-500">
+          <div class="text-base text-gray-500">
             {{ formatDateTime(result.completedAt || result.endTime) }}
           </div>
         </div>
 
         <!-- 메트릭 정보 -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-base">
           <div>
             <span class="text-gray-500">성공률:</span>
             <span 
