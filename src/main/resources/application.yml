@@ -18,7 +18,7 @@ spring:
         livereload:
             enabled: false
     datasource:
-        url: jdbc:postgresql://${POSTGRES_HOST:192.168.100.105}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:exam_db}
+        url: jdbc:postgresql://${POSTGRES_HOST:172.27.0.90}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:exam_db}
         username: ${POSTGRES_USERNAME:postgres}
         password: ${POSTGRES_PASSWORD:postgres}
         driver-class-name: org.postgresql.Driver
@@ -39,7 +39,7 @@ spring:
     # Redis 설정 (실시간 데이터용)
     data:
         redis:
-            host: ${REDIS_HOST:192.168.100.105}
+            host: ${REDIS_HOST:172.27.0.90}
             port: ${REDIS_PORT:6379}
             username: ${REDIS_USERNAME:default}
             password: ${REDIS_PASSWORD:redispassword}
@@ -82,7 +82,7 @@ performance-test:
         test-timeout-minutes: ${TEST_TIMEOUT:30}
     database:
         # 성능 테스트용 데이터베이스 연결 설정
-        host: ${POSTGRES_HOST:192.168.100.105}
+        host: ${POSTGRES_HOST:172.27.0.90}
         port: ${POSTGRES_PORT:5432}
         database: ${POSTGRES_DATABASE:exam_db}
         username: ${POSTGRES_USERNAME:postgres}
